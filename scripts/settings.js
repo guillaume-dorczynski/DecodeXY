@@ -213,11 +213,6 @@ const resetSettingsControls = () => {
 		}
 	}
 
-	/*if (inputString !== '') {
-		//parseContent(inputString);
-		printString(inputString);
-	}*/
-	//parseContent();
 	formatter();
 };
 
@@ -232,7 +227,7 @@ const localStorageAvailable = () => {
 	}
 };
 
-const useLocalStorage = false; //localStorageAvailable();
+const useLocalStorage = localStorageAvailable();
 
 const saveSettings = () => {
 	const saveSetting = (k, v) => {
@@ -250,8 +245,6 @@ const saveSettings = () => {
 		}
 	}
 };
-
-//window.onbeforeunload = saveSettings;
 
 const fixType = (v, s) => {
 	let r = v;
@@ -345,10 +338,6 @@ const makeSettings = () => {
 		}
 
 		if (v.update !== false) {
-			//&& inputString !== '') {
-			//parseContent(inputString);
-			//printString(inputString);
-			//parseContent();
 			formatter();
 		}
 	};
@@ -385,15 +374,6 @@ const makeSettings = () => {
 						l.style = v.style;
 					}
 
-					/*if (v.tooltip !== undefined) {
-						createTooltip(l, v.tooltip, {
-							onShow: (t) =>
-								t.setProps({
-									offset: [0, isScrollableVertically(settingsPanel) ? 21 : 11],
-								}),
-						});
-					}*/
-
 					if (v.stick === true && p_r && p_l) {
 						p_r.style['border-style'] = 'none';
 						p_l.style['padding-bottom'] = '2px';
@@ -424,18 +404,7 @@ const makeSettings = () => {
 			b.appendChild(e);
 			v.control = e;
 			v.labelId = p_l;
-			/*v.labelId.onhover = (e) => {
-				e.target.style['color'] = '#ffffff';
-				v.labelId.style['color'] = '#ffffff';
-			};
-			e.onfocus = (e) => {
-				e.target.style['color'] = '#ffffff';
-				v.labelId.style['color'] = '#ffffff';
-			};
-			e.onblur = (e) => {
-				e.target.style['color'] = '#d2d2d2';
-				v.labelId.style['color'] = '#d2d2d2';
-			};*/
+
 			if (v.tooltip !== undefined) {
 				createTooltip(e, v.tooltip, {
 					triggerTarget: v.tooltipOnControl ? e : v.row,
