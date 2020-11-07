@@ -248,21 +248,18 @@ const formatter = (t, c, d) => {
 	}
 
 	for (const d of parsedData) {
-		const a = d.array;
-		const s = d.struct;
-		content = content.replace(a.original, a.formatted);
-		content = content.replace(s.original, s.formatted);
+		content = content.replace(d.array.original, d.array.formatted);
+		content = content.replace(d.struct.original, d.struct.formatted);
 	}
 
 	if (settings.structVarsToArray === true) {
 		for (const d of parsedData) {
-			const a = d.array;
-			const s = d.struct;
-			for (const e of a.elements.all) {
+			const sn = d.struct.objectName;
+			for (const e of d.array.elements.all) {
 				const esv = e.structVar;
 				if (esv && esv.names) {
 					for (const [ni, n] of esv.names.entries()) {
-						const re = new RegExp('(' + s.objectName + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.)' + n, 'g');
+						const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.)' + n, 'g');
 						content = content.replace(re, (m, m1) => m1 + esv.name + '[' + ni + ']');
 					}
 				}
@@ -270,13 +267,12 @@ const formatter = (t, c, d) => {
 		}
 	} else {
 		for (const d of parsedData) {
-			const a = d.array;
-			const s = d.struct;
-			for (const e of a.elements.all) {
+			const sn = d.struct.objectName;
+			for (const e of d.array.elements.all) {
 				const esv = e.structVar;
 				if (esv && esv.names) {
-					const re = new RegExp('(' + s.objectName + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.)' + esv.name + '\\s*(?:\\[(\\d+)])', 'g');
-					content = content.replace(re, (m, m1, m2) => m1 + esv.names[m2]);
+					const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.)' + esv.name + '\\s*(?:\\[(\\d+)])', 'g');
+					content = content.replace(re, (m, m1, m2) => (esv.names[m2] ? m1 + esv.names[m2] : '// ' + m));
 				}
 			}
 		}
@@ -284,27 +280,27 @@ const formatter = (t, c, d) => {
 
 	let replaceVarValue;
 	if (settings.structVarsToBools === true) {
-		replaceVarValue = (s, n) => {
-			const re = new RegExp('(' + s.objectName + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(0|1)', 'g');
+		replaceVarValue = (sn, n) => {
+			const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(0|1)', 'g');
 			content = content.replace(re, (m, m1, m2) => m1 + (m2 === '0' ? 'false' : 'true'));
 		};
 	} else {
-		replaceVarValue = (s, n) => {
-			const re = new RegExp('(' + s.objectName + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(false|true)', 'g');
+		replaceVarValue = (sn, n) => {
+			const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(false|true)', 'g');
 			content = content.replace(re, (m, m1, m2) => m1 + (m2 === 'false' ? '0' : '1'));
 		};
 	}
 
 	for (const d of parsedData) {
-		const a = d.array;
 		const s = d.struct;
-		for (const e of a.elements.inputs.buttons) {
-			replaceVarValue(s, e.structVar.name);
+		const sn = s.objectName;
+		for (const e of d.array.elements.inputs.buttons) {
+			replaceVarValue(sn, e.structVar.name);
 		}
-		for (const e of a.elements.inputs.switches) {
-			replaceVarValue(s, e.structVar.name);
+		for (const e of d.array.elements.inputs.switches) {
+			replaceVarValue(sn, e.structVar.name);
 		}
-		replaceVarValue(s, s.variables[s.otherVarsIdx].name);
+		replaceVarValue(sn, s.variables[s.otherVarsIdx].name);
 	}
 
 	content = content.replace(reLineEndings, lineEnding);
