@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="A tool to decode RemoteXY Editor's output." />
+		<meta name="keywords" content="RemoteXY,editor,decode,parse,format" />
+		<meta name="author" content="Guillaume Dorczynski" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>DecodeXY</title>
+		<link rel="icon" type="image/x-icon" href="favicon.ico">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap"/>
+		<link rel="stylesheet" type="text/css" href="styles/view.css">
+		<meta charset="utf-8">
+		<script src="https://kit.fontawesome.com/89b2ab2911.js" crossorigin="anonymous"></script>
+	</head>
+	<body>
+		<textarea readonly id="hiddenTextArea" class="hiddenTextArea"></textarea>
+		<input type="file" id="hiddenFileInput" hidden/> <!--multiple /-->
+		<div id="mainContainer" class="mainContainer">
+			<div id="settingsContainer" class="sideContainer" style="margin-right: 0px;">
+				<div id="settingsTop" class="settingsTop"></div>
+				<div id="settingsBottom" class="buttonsRow">
+					<button id="buttonHideSettings" class="button" style="border-right: 0px;">Close</button>
+					<button id="buttonResetSettings" class="button">Reset</button>
+				</div>
+			</div>
+			<div id="middleContainer" class="middleContainer">
+				<div id="codeContainer" class="codeContainer">
+					<!-- <div id="codeButtonsContainer" class="settingsGroupLabel" style="justify-content: space-between;"> -->
+						<!-- <button id="buttonFirst" class="smallButton smallButtonLeft" style="width: 25px"><i class="fas fa-angle-double-left"></i></button> -->
+						<!-- <button id="buttonPrev" class="smallButton smallButtonLeft" style="width: 25px; margin-right: auto;"><i class="fas fa-angle-left"></i></button> -->
+						<div id="codeTitle" class="settingsGroupLabel">No project loaded</div>
+						<!-- <button id="buttonNext" class="smallButton smallButtonRight" style="width: 25px; margin-left: auto;"><i class="fas fa-angle-right"></i></button> -->
+						<!-- <button id="buttonLast" class="smallButton smallButtonRight" style="width: 25px;"><i class="fas fa-angle-double-right"></i></button> -->
+					<!-- </div> -->
+					<div id="codeBoxBottom" class="codeBoxBottom">
+						<code id="codeBox" class="arduino"></code>
+						<button id="bigButton" class="bigButton">DROP OR PASTE REMOTEXY<br/>PROJECT FILE OR TEXT,<br/>OR CLICK TO SELECT FILE</button>
+					</div>
+				</div>
+				<div id="codeButtonsContainer" class="buttonsRow">
+					<button id="buttonShowSettings" class="button" hidden="true" style="max-width: 80px; border-right: 0px;">Settings</button>
+					<button id="buttonCopyCode" class="button">Copy</button>
+					<button id="buttonDownloadCode" class="button" style="border-left: 0px; border-right: 0px;">Download</button>
+					<!-- <button id="buttondownloadAll" class="button">Download all</button> -->
+					<button id="buttonResetCode" class="button">Reset</button>
+					<button id="buttonShowConsole" class="button" hidden="true" style="max-width: 80px; border-left: 0px;">Console</button>
+				</div>
+			</div>
+			<div id="consoleContainer" class="sideContainer" style="margin-left: 0px;"">
+				<div id="consoleTop" class="consoleTop">
+					<div id="console" class="console"></div>
+				</div>
+				<div id="consoleBottom" class="buttonsRow">
+					<button id="buttonClearConsole" class="button">Clear</button>
+					<button id="buttonCopyConsole" class="button" style="border-left: 0px; border-right: 0px;">Copy</button>
+					<button id="buttonHideConsole" class="button">Close</button>
+				</div>
+			</div>
+		</div>
+		<script src="scripts/main.js"></script>
+	</body>
+</html>
