@@ -1,16 +1,5 @@
-//import { getSetting } from "./settings.js";
-import { scrollConsoleToBottom } from './console.js';
-import treeify from 'treeify';
-import JSONFormatter from 'json-formatter-js';
 import { formatter } from './formatter.js';
-
-/*
-let inputString = "";
-
-const printString = str => {
-	inputString = str;
-	parseContent(inputString);
-};*/
+import treeify from 'treeify';
 
 // Regex to remove comments
 // prettier-ignore
@@ -174,32 +163,30 @@ const parser = (title, content) => {
 			objectName: m[3] || '',
 			objectSize: m[4] || 1,
 			size: 0,
-			//maxVarTypeLength: 0,
 			variables: [],
 		};
-		// Replace FLProg data types
-		const replacedTypes = {
+
+		const FLProgTypes = {
 			'unsigned char': 'uint8_t',
 			'signed char': 'int8_t',
 		};
-		for (const [k, v] of Object.entries(replacedTypes)) {
+		for (const [k, v] of Object.entries(FLProgTypes)) {
 			m[2] = m[2].replace(new RegExp(k, 'g'), v);
 		}
+
 		for (const m2 of m[2].matchAll(reStructData)) {
 			const v = {
 				type: m2[1],
 				name: m2[2],
 				size: m2[3] ? Number(m2[3]) : 1,
 			};
-			//if (s.maxVarTypeLength < v.type.length) {
-			//	s.maxVarTypeLength = v.type.length;
-			//}
 			s.size += v.size * sizeOfType[v.type];
 			s.variables.push(v);
 		}
+
 		structs.push(s);
-		console.log(treeify.asTree(s, true));
 	}
+
 	const structsLenght = structs.length;
 	if (structsLenght === 0) {
 		console.warn("Couldn't find any struct!\n");
@@ -207,6 +194,7 @@ const parser = (title, content) => {
 	} else {
 		console.info('Found ' + structsLenght + ' struct' + (structsLenght > 1 ? 's.\n' : '.\n'));
 	}
+
 	console.log('Searching arrays...\n');
 	const headerSize = 10;
 	for (const m of c.matchAll(reArray)) {
@@ -214,12 +202,13 @@ const parser = (title, content) => {
 			let i = 0;
 			const v = [];
 			const n = [];
+
 			for (const m2 of m[3].matchAll(reArrayData)) {
 				v[i] = m2[0];
 				n[i] = Number(v[i]);
 				i++;
 			}
-			console.log(v);
+
 			if (i >= headerSize && n[0] === 255 && n[7] === headerSize && i === ((n[6] << 8) | n[5]) + 7) {
 				const a = {
 					startPos: m.index,
@@ -269,6 +258,7 @@ const parser = (title, content) => {
 						},
 					},
 				};
+
 				let j = 0;
 				while (j < headerSize) {
 					a.header.values[j] = v[j++];
@@ -309,7 +299,6 @@ const parser = (title, content) => {
 									e.texts = [textAtPos(v, ++j)];
 									j = e.texts[0].endPos;
 									e.structVar = { type: 'uint8_t', size: 1, type2: 'bool' };
-									//e.structVar = { type: 'uint8_t', size: 1 };
 									a.elements.inputs.buttons.push(e);
 									break;
 								}
@@ -510,7 +499,6 @@ const parser = (title, content) => {
 						e.values[i] = v[j];
 						e.bytes[i] = n[j];
 					}
-					//console.log(e.values);
 					a.elements.totalBytes += e.values.length;
 					a.elements.all.push(e);
 				}
@@ -519,7 +507,7 @@ const parser = (title, content) => {
 				}
 			}
 		}
-	} //);
+	}
 
 	const arraysLenght = arrays.length;
 	if (arraysLenght === 0) {
@@ -530,7 +518,7 @@ const parser = (title, content) => {
 		let error = false;
 		for (const [ai, a] of arrays.entries()) {
 			const n = a.header.totalInputs + a.header.totalOutputs;
-			const elements = a.elements.inputs.all.concat(a.elements.outputs.all);
+			const elements = [...a.elements.inputs.all, ...a.elements.outputs.all];
 			for (const [si, s] of structs.entries()) {
 				if (a.structId === undefined && s.arrayId === undefined) {
 					if (s.size === n + 1) {
@@ -546,9 +534,9 @@ const parser = (title, content) => {
 										let n = sv.name;
 										esv.name = n;
 										if (esv.size > 1) {
-											esv.names = [];
 											if (e.category === category.output) {
 												if (e.type === outputType.led) {
+													esv.names = [];
 													const rgb = e.rgbChannels;
 													if (rgb & 0b100) {
 														esv.names.push(n + '_r');
@@ -560,12 +548,14 @@ const parser = (title, content) => {
 														esv.names.push(n + '_b');
 													}
 												} else if (e.type === outputType.onlineGraph) {
+													esv.names = [];
 													n += '_var';
 													for (let i = 1; i <= e.valuesCount; i++) {
 														esv.names.push(n + i);
 													}
 												}
 											} else if (e.category === category.input && e.type === inputType.joystick) {
+												esv.names = [];
 												esv.names.push(n + '_x');
 												esv.names.push(n + '_y');
 											}
@@ -618,33 +608,8 @@ const parser = (title, content) => {
 		}
 
 		if (parsedData.length > 0) {
-			//beginFormatter(title, content, parsedData);
 			formatter(title, content, parsedData);
-			//console.log(treeify.asTree(parsedData, true));
-			const parsedDataTree = new JSONFormatter(
-				parsedData,
-				Infinity,
-				{
-					hoverPreviewEnabled: true,
-					hoverPreviewArrayCount: 100,
-					hoverPreviewFieldCount: 5,
-					theme: 'custom',
-					animateOpen: true,
-					animateClose: true,
-					useToJSON: true,
-				},
-				'parsedData',
-			);
-			let tree = parsedDataTree.render();
-			/*tree.onclick = () => {
-				//console.log('bla');
-				//tree.scrollTop = tree.scrollHeight;
-				//tree.scrollTop(tree.prop('scrollHeight'));
-				//tree.scrollIntoView({ behavior: 'smooth', block: 'end' });
-				//tree.scrollIntoView(false);
-			};*/
-			document.getElementById('console').appendChild(tree);
-			scrollConsoleToBottom();
+			console.json(parsedData, 'parsedData');
 		}
 	}
 };

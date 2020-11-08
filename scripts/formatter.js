@@ -3,9 +3,24 @@ import { category, inputType, outputType, decorationType } from './parser.js';
 import { setCode } from './codebox.js';
 import clone from 'clone';
 
-let formatterData = undefined;
-
 const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
+
+// prettier-ignore
+const reCommentsList = [
+	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
+	[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+', 'g'), ''],
+	//[new RegExp('^\\s?\\.*\\/\\/\\s*(?:' +
+	[new RegExp('\\s*.*\\/\\/\\s*(?:' +
+		'RemoteXY select connection mode and include library|' +
+		'RemoteXY connection settings|' +
+		'RemoteXY configurate|' +
+		'this structure defines all the variables and events of your control interface|' +
+		'TODO you setup code|' +
+		'TODO you loop code[^]*do not call delay\\(\\)' +
+		')\\s+', 'g'), ''],
+];
+
+let formatterData = undefined;
 
 const resetFormatter = () => {
 	formatterData = undefined;
@@ -139,7 +154,7 @@ const formatter = (t, c, d) => {
 						break;
 					}
 					case decorationType.page: {
-						n += 'page_' + e.pageId + (e.isMainPage ? ' (default page)' : '');
+						n += 'page_' + e.pageId + (e.isMainPage ? ' (main page)' : '');
 						break;
 					}
 					default: {
@@ -303,25 +318,12 @@ const formatter = (t, c, d) => {
 		replaceVarValue(sn, s.variables[s.otherVarsIdx].name);
 	}
 
+	console.log(content.length);
 	content = content.replace(reLineEndings, lineEnding);
-
-	// prettier-ignore
-	const commentsList = [
-		[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
-		[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+', 'g'), ''],
-		//[new RegExp('^\\s?\\.*\\/\\/\\s*(?:' +
-		[new RegExp('\\s*.*\\/\\/\\s*(?:' +
-			'RemoteXY select connection mode and include library|' +
-			'RemoteXY connection settings|' +
-			'RemoteXY configurate|' +
-			'this structure defines all the variables and events of your control interface|' +
-			'TODO you setup code|' +
-			'TODO you loop code[^]*do not call delay\\(\\)' +
-			')\\s+', 'g'), ''],
-	];
+	console.log(content.length);
 
 	if (settings.removeComments === true) {
-		for (const c of commentsList) {
+		for (const c of reCommentsList) {
 			content = content.replace(c[0], c[1] || '');
 		}
 	}

@@ -3,8 +3,6 @@ import clike from 'highlight.js/lib/languages/c-like.js';
 import cpp from 'highlight.js/lib/languages/cpp.js';
 import arduino from 'highlight.js/lib/languages/arduino.js';
 import 'highlight.js/styles/vs2015.css';
-//import { resetContent } from './loader.js';
-import { resetFormatter } from './formatter.js';
 
 hljs.registerLanguage('c-like', clike);
 hljs.registerLanguage('cpp', cpp);
@@ -15,7 +13,9 @@ const codeTitle = document.getElementById('codeTitle');
 const hiddenTextArea = document.getElementById('hiddenTextArea');
 const bigButton = document.getElementById('bigButton');
 
+let codeText;
 const setCode = (title, code) => {
+	codeText = code;
 	codeBox.textContent = code;
 	codeTitle.textContent = title || '';
 	bigButton.hidden = true;
@@ -23,16 +23,31 @@ const setCode = (title, code) => {
 };
 
 const copyCode = () => {
-	hiddenTextArea.value = codeBox.textContent;
+	hiddenTextArea.value = codeText; //codeBox.textContent;
 	hiddenTextArea.select();
 	document.execCommand('copy');
 	hiddenTextArea.value = '';
 	console.info('Code has been copied to clipboard.');
 };
 
-const downloadCode = () => {
+/*const downloadCode = () => {
 	let e = document.createElement('a');
 	e.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(codeBox.textContent));
+	e.setAttribute('download', codeTitle.textContent);
+	e.style.display = 'none';
+	document.body.appendChild(e);
+	e.click();
+	document.body.removeChild(e);
+};*/
+
+const downloadCode = () => {
+	var data = new Blob([codeBox.innerText], { type: 'text/plain' });
+
+	var url = window.URL.createObjectURL(data);
+
+	let e = document.createElement('a');
+	e.href = url;
+	//e.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(codeBox.textContent));
 	e.setAttribute('download', codeTitle.textContent);
 	e.style.display = 'none';
 	document.body.appendChild(e);
@@ -41,10 +56,10 @@ const downloadCode = () => {
 };
 
 const resetCode = () => {
-	resetFormatter();
 	codeBox.textContent = '';
 	codeTitle.textContent = 'No project loaded';
 	bigButton.hidden = false;
+	console.log('Ready');
 };
 
 export { setCode, copyCode, downloadCode, resetCode };

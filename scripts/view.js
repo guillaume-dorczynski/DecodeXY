@@ -6,6 +6,9 @@ import { setSetting, saveSettings, resetSettingsControls } from './settings.js';
 import { loadContent } from './loader.js';
 import { clearConsole, scrollConsoleToBottom } from './console.js';
 import { downloadCode, resetCode } from './codebox.js';
+import { resetFormatter } from './formatter.js';
+
+window.onbeforeunload = () => saveSettings();
 
 const elements = {
 	buttonShowSettings: true,
@@ -30,18 +33,48 @@ for (const e of Object.keys(elements)) {
 	elements[e] = document.getElementById(e);
 }
 
-elements.buttonShowSettings.onclick = () => toggleSettings(true);
-elements.buttonHideSettings.onclick = () => toggleSettings(false);
-elements.buttonResetSettings.onclick = () => resetSettingsControls();
-elements.buttonShowConsole.onclick = () => toggleConsole(true);
-elements.buttonHideConsole.onclick = () => toggleConsole(false);
-elements.buttonClearConsole.onclick = () => clearConsole();
-elements.buttonCopyConsole.onclick = () => copyToClipboard('console', 'Console');
-elements.buttonCopyCode.onclick = () => copyToClipboard('codeBox', 'Code');
-elements.buttonDownloadCode.onclick = () => downloadCode();
-elements.buttonResetCode.onclick = () => resetCode();
+elements.buttonShowSettings.onclick = () => {
+	toggleSettings(true);
+};
 
-window.onbeforeunload = () => saveSettings();
+elements.buttonHideSettings.onclick = () => {
+	toggleSettings(false);
+};
+
+elements.buttonResetSettings.onclick = () => {
+	resetSettingsControls();
+};
+
+elements.buttonShowConsole.onclick = () => {
+	toggleConsole(true);
+};
+
+elements.buttonHideConsole.onclick = () => {
+	toggleConsole(false);
+};
+
+elements.buttonClearConsole.onclick = () => {
+	clearConsole();
+};
+
+elements.buttonCopyConsole.onclick = () => {
+	copyToClipboard('console', 'Console');
+};
+
+elements.buttonCopyCode.onclick = () => {
+	copyToClipboard('codeBox', 'Code');
+};
+
+elements.buttonDownloadCode.onclick = () => {
+	downloadCode();
+};
+
+elements.buttonResetCode.onclick = () => {
+	resetCode();
+	resetFormatter();
+	clearConsole();
+	console.log('Ready');
+};
 
 const drawView = () => {
 	document.body.style.visibility = 'visible';
@@ -192,10 +225,7 @@ elements.bigButton.onmouseup = (e) => {
 elements.bigButton.onclick = (e) => {
 	e.stopPropagation();
 	e.preventDefault();
-	//if (buttonPressed) {
 	elements.hiddenFileInput.click();
-	//	buttonPressed = false;
-	//}
 };
 
 export { drawView, toggleSettings, toggleConsole, allowedFileTypes };

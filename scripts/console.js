@@ -1,36 +1,60 @@
-const embeddedConsole = document.getElementById('console');
+import JSONFormatter from 'json-formatter-js';
 
-for (const verb of ['log', 'debug', 'info', 'warn', 'error']) {
-	console[verb] = ((method, verb, log) => {
+const consoleElement = document.getElementById('console');
+
+for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
+	console[f] = ((method, f) => {
 		return function () {
-			method.apply(console, arguments);
-			var msg = document.createElement('div');
-			if (verb === 'info') {
-				msg.style.color = 'rgb(50,150,250)';
+			let div;
+			if (f === 'json') {
+				const tree = new JSONFormatter(
+					arguments[0],
+					Infinity,
+					{
+						hoverPreviewEnabled: true,
+						hoverPreviewArrayCount: 100,
+						hoverPreviewFieldCount: 5,
+						theme: 'custom',
+						animateOpen: true,
+						animateClose: true,
+						useToJSON: true,
+					},
+					arguments[1],
+				);
+				div = tree.render();
+				console.log(arguments[0]);
+			} else {
+				method.apply(console, arguments);
+				div = document.createElement('div');
+				if (f === 'info') {
+					div.style.color = 'rgb(50,150,250)';
+				}
+				if (f === 'error') {
+					div.style.color = 'rgb(255,128,128)';
+				}
+				div.classList.add(f);
+				div.innerText = Array.prototype.slice.call(arguments).join(' ');
 			}
-			if (verb === 'error') {
-				msg.style.color = 'rgb(255,128,128)';
-			}
-			msg.classList.add(verb);
-			msg.innerText = Array.prototype.slice.call(arguments).join(' ');
-			log.appendChild(msg);
-			log.scrollIntoView(false);
+			consoleElement.appendChild(div);
+			consoleElement.scrollIntoView(false);
 		};
-	})(console[verb], verb, embeddedConsole);
+	})(console[f], f);
 }
 
+/*
 const isPrintable = (char) => {
-	/*eslint-disable-next-line no-control-regex*/
+	//eslint-disable-next-line no-control-regex
 	return !RegExp('[\\x00-\\x08\\x0E-\\x1F\\x80-\\xFF]').test(char);
 };
+*/
 
 const clearConsole = () => {
-	embeddedConsole.innerText = '';
+	consoleElement.innerText = '';
 };
 
 const copyConsole = () => {
 	const e = document.getElementById('hiddenTextArea');
-	e.value = embeddedConsole.innerText;
+	e.value = consoleElement.innerText;
 	e.select();
 	document.execCommand('copy');
 	e.value = '';
@@ -38,7 +62,7 @@ const copyConsole = () => {
 };
 
 const scrollConsoleToBottom = () => {
-	embeddedConsole.scrollIntoView(false);
+	consoleElement.scrollIntoView(false);
 };
 
 export { clearConsole, copyConsole, scrollConsoleToBottom };
