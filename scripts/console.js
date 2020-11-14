@@ -22,7 +22,6 @@ for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
 					arguments[1],
 				);
 				div = tree.render();
-				console.log(arguments[0]);
 			} else {
 				method.apply(console, arguments);
 				div = document.createElement('div');

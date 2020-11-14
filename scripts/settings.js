@@ -68,8 +68,8 @@ const settings = {
 		stick: true,
 	},
 	lineEnding: {
-		label: 'Normalize line ending',
-		tooltip: 'This will change all Line Ending characters of the file.',
+		label: 'Line ending',
+		tooltip: 'This option will normalize all the line ending characters.',
 		type: 'select',
 		options: { 0: 'Detect', 1: 'LF', 2: 'CR+LF' },
 		value: 2,
@@ -125,12 +125,12 @@ const settings = {
 	},
 	showCharacters: {
 		label: 'Show texts characters',
-		tooltip: 'Enable this option to convert bytes to characters when needed, so you can see texts. Multibyte characters will not be converted.',
+		tooltip: 'Enable this option to convert text bytes to characters.',
 		type: 'checkbox',
 		value: true,
 	},
 	showNullCharacters: {
-		label: "Show '\\0' at the end",
+		label: "Also show '\\0' at the end",
 		tooltip: 'Enable this option to show null characters at the end of texts.',
 		type: 'checkbox',
 		value: true,

@@ -23,23 +23,15 @@ const reArray = new RegExp(
 	"g",
 );
 
-// Regex to extract array content, validating numbers from -255 to 255 and any characters such as 'C' or '\n'
+// Regex to extract array content
 // prettier-ignore
 const reArrayData = new RegExp(
-	"-?\\b(?:" +    // optional "-", assert word boundary, followed by...
-	"[0-9]" +       // a single digit, 0 to 9
-	"|" +           // or
-	"[1-9][0-9]" +  // two digits, 10 to 99
-	"|" +           // or
-	"1[0-9][0-9]" + // three digits, 100 to 199
-	"|" +           // or
-	"2[0-4][0-9]" + // three digits, 200 to 249
-	"|" +           // or
-	"25[0-5]" +     // three digits, 250 to 255
-	")\\b" +        // assert word boundary
-	"|" +           // or if it's not a number from -255 to 255,
-	"'\\\\?.?'",    // search a (possibly escaped) character between ' '
-	"g",
+	"(-?\\s*\\b(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\b)" +    // capture number in range 0-255, possibly negative (group 1)
+	"|'([^\\\\]|\\\\[^\\d]|\\d)'" +                                          // or character like 'c' or '\n' (group 2)
+	"|(0x[0-9a-fA-F]{1,2}|'\\\\x[0-9a-fA-F]{1,2}'|'\\\\u00[0-9a-fA-F]{2}')" + // or hex value like 0x63, '\x63', or '\u0063' (group 3)
+	"|'(\\\\\\d{1,3})'" +                                                     // or octal value like '\143' (group 4)
+	"|((?:0b|0B|B)\\d{1,8})",                                                 // or binary value like 0b1100011 or B1100011 (group 5)
+	'g'
 );
 
 // Regex to search structs
@@ -63,6 +55,28 @@ const reStructData = new RegExp(
 	"\\s*(?:\\[\\s*(\\d+)\\s*\\])?\\s*\\;",          // skip any whitespaces, try capture variable-size (group 3) between [], until any whitespaces and ";"
 	"g",
 );
+
+const reSpaces = new RegExp('\\s*', 'g');
+
+const escapedCharacters = {
+	'\\0': '\0',
+	"\\'": "'",
+	'\\"': '"',
+	'\\?': '?',
+	'\\\\': '\\',
+	'\\a': '\x07',
+	'\\b': '\b',
+	'\\f': '\f',
+	'\\n': '\n',
+	'\\r': '\r',
+	'\\t': '\t',
+	'\\v': '\v',
+	$$: '$',
+};
+
+for (const [k, v] of Object.entries(escapedCharacters)) {
+	escapedCharacters[v] = k;
+}
 
 const sizeOfType = {
 	bool: 1,
@@ -110,36 +124,24 @@ const decorationType = {
 	page: 3,
 };
 
-const textAtPos = (a, p) => {
+const textAtPos = (n, p) => {
 	let i = p;
-	let n = undefined;
-	let c = undefined;
 	let an = [];
 	let ac = [];
+	let b;
 
-	while (a[i] !== '0' && a[i] !== "'\\0'") {
-		n = Number(a[i]);
-		if (isNaN(n)) {
-			c = a[i].match(/'([^])'/)[1];
-			if (c) {
-				n = c.charCodeAt(0);
-				a[i] = n.toString();
-			}
-		} else {
-			c = String.fromCharCode(n);
-		}
-		an.push(n);
-		ac.push(n > 127 ? a[i] : "'" + c + "'");
+	while (n[i] !== 0) {
+		b = (n[i] >>> 0) & 0xff;
+		const c = String.fromCharCode(b);
+		const e = escapedCharacters[c];
+		an.push(b);
+		ac.push(b >= 0 && b <= 127 ? "'" + (e ? e : c) + "'" : b.toString());
 		i++;
 	}
 
-	if (a[i] === "'\\0'") {
-		a[i] = '0';
-	}
-
 	return {
-		text: new TextDecoder('utf-8').decode(Uint8Array.from(an)),
 		chars: ac,
+		text: new TextDecoder('utf-8').decode(Uint8Array.from(an)),
 		startPos: p,
 		endPos: i,
 	};
@@ -200,30 +202,47 @@ const parser = (title, content) => {
 	for (const m of c.matchAll(reArray)) {
 		if (m[3]) {
 			let i = 0;
-			const v = [];
-			const n = [];
-
+			const an = [];
 			for (const m2 of m[3].matchAll(reArrayData)) {
-				v[i] = m2[0];
-				n[i] = Number(v[i]);
-				i++;
+				let n;
+				if (m2) {
+					if (m2[1]) {
+						n = Number(m2[1].replace(reSpaces, ''));
+					} else if (m2[2]) {
+						if (m2[2].charAt(0) === '\\') {
+							const e = escapedCharacters[m2[2]];
+							n = e ? e.charCodeAt(0) : m2[2].charCodeAt(1);
+						} else {
+							n = m2[2].charCodeAt(0);
+						}
+					} else if (m2[3]) {
+						n = parseInt(m2[3].substring(m2[3].charAt(0) === "'" ? 3 : 2), 16);
+					} else if (m2[4]) {
+						n = parseInt(m2[4].substring(1), 8);
+					} else if (m2[5]) {
+						n = parseInt(m2[5].substring(m2[5].charAt(0) === 'B' ? 1 : 2), 2);
+					}
+					an[i++] = n;
+				}
 			}
 
-			if (i >= headerSize && n[0] === 255 && n[7] === headerSize && i === ((n[6] << 8) | n[5]) + 7) {
+			if (i >= headerSize && an[0] === 255 && an[7] === headerSize && i === ((an[6] << 8) | an[5]) + 7) {
 				const a = {
 					startPos: m.index,
 					endPos: m.index + m[0].length,
 					name: m[1],
 					size: m[2] ? Number(m[2]) : -1,
+					allBytes: an,
 					header: {
 						values: [],
-						totalInputs: (n[2] << 8) | n[1],
-						totalOutputs: (n[4] << 8) | n[3],
+						bytes: [],
+						totalInputs: (an[2] << 8) | an[1],
+						totalOutputs: (an[4] << 8) | an[3],
 						totalBytes: i - headerSize,
-						backgroundColor: n[8],
+						backgroundColor: an[8],
 						flags: {
-							viewOrientation: n[9] & 0b00000011,
-							pagesEnabled: (n[9] & 0b00000100) >> 2,
+							viewOrientation: an[9] & 0b00000011,
+							pagesEnabled: (an[9] & 0b00000100) >> 2,
 						},
 					},
 					maxLineLength: 0,
@@ -261,32 +280,34 @@ const parser = (title, content) => {
 
 				let j = 0;
 				while (j < headerSize) {
-					a.header.values[j] = v[j++];
+					a.header.bytes[j] = an[j];
+					a.header.values[j] = a.header.bytes[j].toString();
+					j++;
 				}
 				while (j < i - 1) {
 					const e = {
 						startPos: j,
 						endPos: 0,
-						category: n[j] >> 6,
-						type: n[j] & 0b00001111,
+						category: an[j] >> 6,
+						type: an[j] & 0b00001111,
 						values: [],
 						bytes: [],
 						lines: [],
-						id: n[j],
-						flags: n[++j],
-						x1: n[++j],
-						y1: n[++j],
-						w1: n[++j],
-						h1: n[++j],
+						id: an[j],
+						flags: an[++j],
+						x1: an[++j],
+						y1: an[++j],
+						w1: an[++j],
+						h1: an[++j],
 					};
 					if (a.header.flags.viewOrientation === viewOrientation.both) {
-						e.x2 = n[++j];
-						e.y2 = n[++j];
-						e.w2 = n[++j];
-						e.h2 = n[++j];
+						e.x2 = an[++j];
+						e.y2 = an[++j];
+						e.w2 = an[++j];
+						e.h2 = an[++j];
 					}
 					if (a.header.flags.pagesEnabled === 1) {
-						e.pageId = n[++j];
+						e.pageId = an[++j];
 					}
 					switch (e.category) {
 						case category.input: {
@@ -294,9 +315,9 @@ const parser = (title, content) => {
 								case inputType.button: {
 									e.shape = e.flags & 0b00000011;
 									e.borderStyle = (e.flags & 0b00001100) >> 2;
-									e.backgroundColor = n[++j];
-									e.textColor = n[++j];
-									e.texts = [textAtPos(v, ++j)];
+									e.backgroundColor = an[++j];
+									e.textColor = an[++j];
+									e.texts = [textAtPos(an, ++j)];
 									j = e.texts[0].endPos;
 									e.structVar = { type: 'uint8_t', size: 1, type2: 'bool' };
 									a.elements.inputs.buttons.push(e);
@@ -304,13 +325,13 @@ const parser = (title, content) => {
 								}
 								case inputType.switch: {
 									e.shape = e.flags & 0b00000011;
-									e.buttonColor = n[++j];
-									e.backgroundColor = n[++j];
-									e.textOnColor = n[++j];
-									e.textOffColor = n[++j];
+									e.buttonColor = an[++j];
+									e.backgroundColor = an[++j];
+									e.textOnColor = an[++j];
+									e.textOffColor = an[++j];
 									e.texts = [];
-									e.texts[0] = textAtPos(v, ++j);
-									e.texts[1] = textAtPos(v, e.texts[0].endPos + 1);
+									e.texts[0] = textAtPos(an, ++j);
+									e.texts[1] = textAtPos(an, e.texts[0].endPos + 1);
 									j = e.texts[1].endPos;
 									e.structVar = { type: 'uint8_t', size: 1, type2: 'bool' };
 									a.elements.inputs.switches.push(e);
@@ -319,8 +340,8 @@ const parser = (title, content) => {
 								case inputType.select: {
 									e.optionsCount = e.flags & 0b00000111;
 									e.orientation = (e.flags & 0b10000000) >> 7;
-									e.buttonColor = n[++j];
-									e.backgroundColor = n[++j];
+									e.buttonColor = an[++j];
+									e.backgroundColor = an[++j];
 									e.structVar = { type: 'uint8_t', size: 1 };
 									a.elements.inputs.selects.push(e);
 									break;
@@ -329,8 +350,8 @@ const parser = (title, content) => {
 									e.alwaysCenter = (e.flags & 0b00010000) >> 4;
 									e.centerPosition = (e.flags & 0b01100000) >> 5;
 									e.orientation = (e.flags & 0b10000000) >> 7;
-									e.buttonColor = n[++j];
-									e.backgroundColor = n[++j];
+									e.buttonColor = an[++j];
+									e.backgroundColor = an[++j];
 									e.structVar = { type: 'int8_t', size: 1 };
 									a.elements.inputs.sliders.push(e);
 									break;
@@ -338,16 +359,16 @@ const parser = (title, content) => {
 								case inputType.joystick: {
 									e.buttonsPositions = e.flags & 0b00011111;
 									e.automaticCenter = (e.flags & 0b00100000) >> 5;
-									e.buttonColor = n[++j];
-									e.backgroundColor = n[++j];
-									e.textColor = n[++j];
+									e.buttonColor = an[++j];
+									e.backgroundColor = an[++j];
+									e.textColor = an[++j];
 									e.structVar = { type: 'int8_t', size: 2 };
 									a.elements.inputs.joysticks.push(e);
 									break;
 								}
 								case inputType.colorPicker: {
-									e.buttonColor = n[++j];
-									e.backgroundColor = n[++j];
+									e.buttonColor = an[++j];
+									e.backgroundColor = an[++j];
 									e.structVar = { type: 'uint8_t', size: 3 };
 									a.elements.inputs.colorPickers.push(e);
 									break;
@@ -357,14 +378,14 @@ const parser = (title, content) => {
 									e.showBackground = (e.flags & 0b00000100) >> 2;
 									e.inputType = (e.flags & 0b00011000) >> 3;
 									e.showClearButton = (e.flags & 0b00100000) >> 5;
-									e.textColor = n[++j];
-									e.backgroundColor = n[++j];
-									e.buttonColor = n[++j];
+									e.textColor = an[++j];
+									e.backgroundColor = an[++j];
+									e.buttonColor = an[++j];
 									if (e.inputType === 0b00) {
-										e.maxTextLength = n[++j];
+										e.maxTextLength = an[++j];
 										e.structVar = { type: 'char', size: e.maxTextLength };
 									} else if (e.inputType === 0b01) {
-										e.maxDecimals = n[++j];
+										e.maxDecimals = an[++j];
 										e.structVar = { type: 'float', size: 1 };
 									} else if (e.inputType === 0b10) {
 										e.structVar = { type: 'int16_t', size: 1 };
@@ -401,8 +422,8 @@ const parser = (title, content) => {
 									e.levelType = e.flags & 0b00000111;
 									e.centerPosition = (e.flags & 0b01100000) >> 5;
 									e.orientation = (e.flags & 0b10000000) >> 7;
-									e.color = n[++j];
-									e.backgroundColor = n[++j];
+									e.color = an[++j];
+									e.backgroundColor = an[++j];
 									e.structVar = { type: 'int8_t', size: 1 };
 									a.elements.outputs.levels.push(e);
 									break;
@@ -410,9 +431,9 @@ const parser = (title, content) => {
 								case outputType.textString: {
 									e.alignment = e.flags & 0b00000011;
 									e.showBackground = (e.flags & 0b00000100) >> 2;
-									e.textColor = n[++j];
-									e.backgroundColor = n[++j];
-									e.maxTextLength = n[++j];
+									e.textColor = an[++j];
+									e.backgroundColor = an[++j];
+									e.maxTextLength = an[++j];
 									e.structVar = { type: 'char', size: e.maxTextLength };
 									a.elements.outputs.textStrings.push(e);
 									break;
@@ -421,16 +442,16 @@ const parser = (title, content) => {
 									e.valuesCount = e.flags & 0b00001111;
 									e.showValues = (e.flags & 0b00010000) >> 4;
 									e.showLegends = (e.flags & 0b00100000) >> 5;
-									e.backgroundColor = n[++j];
+									e.backgroundColor = an[++j];
 									e.structVar = { type: 'float', size: e.valuesCount };
 									e.colors = [];
 									for (let i = 0; i < e.valuesCount; i++) {
-										e.colors[i] = n[++j];
+										e.colors[i] = an[++j];
 									}
 									if (e.showLegends === 1) {
 										e.texts = [];
 										for (let i = 0; i < e.valuesCount; i++) {
-											e.texts[i] = textAtPos(v, ++j);
+											e.texts[i] = textAtPos(an, ++j);
 											j = e.texts[i].endPos;
 										}
 									}
@@ -441,7 +462,7 @@ const parser = (title, content) => {
 									e.hide = e.flags & 0b00000001;
 									e.structVar = { type: 'int16_t', size: 1 };
 									if (e.hide === 0) {
-										e.color = n[++j];
+										e.color = an[++j];
 									}
 									a.elements.outputs.sounds.push(e);
 									break;
@@ -460,8 +481,8 @@ const parser = (title, content) => {
 							switch (e.type) {
 								case decorationType.label: {
 									e.labelId = a.elements.decorations.labels.length + 1;
-									e.textColor = n[++j];
-									e.texts = [textAtPos(v, ++j)];
+									e.textColor = an[++j];
+									e.texts = [textAtPos(an, ++j)];
 									j = e.texts[0].endPos;
 									a.elements.decorations.labels.push(e);
 									break;
@@ -469,16 +490,16 @@ const parser = (title, content) => {
 								case decorationType.panel: {
 									e.panelId = a.elements.decorations.panels.length + 1;
 									e.bevel = e.flags & 0b00000011;
-									e.color = n[++j];
+									e.color = an[++j];
 									a.elements.decorations.panels.push(e);
 									break;
 								}
 								case decorationType.page: {
 									e.isMainPage = e.flags & 0b00000001;
 									e.border = (e.flags & 0b00000110) >> 1;
-									e.backgroundColor = n[++j];
-									e.textColor = n[++j];
-									e.texts = [textAtPos(v, ++j)];
+									e.backgroundColor = an[++j];
+									e.textColor = an[++j];
+									e.texts = [textAtPos(an, ++j)];
 									j = e.texts[0].endPos;
 									a.elements.decorations.pages.push(e);
 									break;
@@ -496,10 +517,10 @@ const parser = (title, content) => {
 					}
 					e.endPos = j++;
 					for (let i = 0, j = e.startPos; j <= e.endPos; i++, j++) {
-						e.values[i] = v[j];
-						e.bytes[i] = n[j];
+						e.bytes[i] = an[j];
+						e.values[i] = e.bytes[i].toString();
 					}
-					a.elements.totalBytes += e.values.length;
+					a.elements.totalBytes += e.bytes.length;
 					a.elements.all.push(e);
 				}
 				if (i === j && a.elements.totalInputs === a.header.totalInputs && a.elements.totalOutputs === a.header.totalOutputs) {

@@ -166,13 +166,12 @@ const formatter = (t, c, d) => {
 		};
 
 		if (settings.fixNegativeValues === true) {
+			for (let i = 0; i < a.header.bytes.length; i++) {
+				a.header.values[i] = ((a.header.bytes[i] >>> 0) & 0xff).toString();
+			}
 			for (const e of a.elements.all) {
 				for (let i = 0; i < e.bytes.length; i++) {
-					let b = e.bytes[i];
-					if (!isNaN(b) && b < 0) {
-						b += 256;
-						e.values[i] = b.toString();
-					}
+					e.values[i] = ((e.bytes[i] >>> 0) & 0xff).toString();
 				}
 			}
 		}
@@ -200,7 +199,7 @@ const formatter = (t, c, d) => {
 			}
 			for (const e of a.elements.all) {
 				for (let i = 0; i < e.values.length; i++) {
-					e.values[i] = e.values[i].padStart(vp, ' ');
+					e.values[i] = e.values[i].padStart(e.values[i] === "'$$'" ? vp + 1 : vp, ' ');
 				}
 			}
 		}
