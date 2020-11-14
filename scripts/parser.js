@@ -229,7 +229,7 @@ const parser = (title, content) => {
 				}
 			}
 
-			if (i >= headerSize && an[0] === 255 && an[7] === headerSize && i === ((an[6] << 8) | an[5]) + 7) {
+			if (i >= headerSize && an[0] === 255 && i === ((an[6] << 8) | an[5]) + 7) {
 				const a = {
 					startPos: m.index,
 					endPos: m.index + m[0].length,
