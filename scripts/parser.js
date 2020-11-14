@@ -126,22 +126,20 @@ const decorationType = {
 
 const textAtPos = (n, p) => {
 	let i = p;
-	let an = [];
-	let ac = [];
 	let b;
+	let ac = [];
 
 	while (n[i] !== 0) {
 		b = (n[i] >>> 0) & 0xff;
 		const c = String.fromCharCode(b);
 		const e = escapedCharacters[c];
-		an.push(b);
 		ac.push(e || (b >= 32 && b <= 127) ? "'" + (e ? e : c) + "'" : b.toString());
 		i++;
 	}
 
 	return {
 		chars: ac,
-		text: new TextDecoder('utf-8').decode(Uint8Array.from(an)),
+		text: new TextDecoder('utf-8').decode(Uint8Array.from(n.slice(p, i))),
 		startPos: p,
 		endPos: i,
 	};
