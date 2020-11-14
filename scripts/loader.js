@@ -48,7 +48,7 @@ const loadContent = (c, n) => {
 		} else if (n === 'p') {
 			n = 'Pasted text';
 		}
-		console.log('loadContent: loading a string named ' + n + ':\n' + c);
+		console.log('\nLoading "' + n + '"');
 		//loadedContent = { name: n, content: c };
 		parser(n, c);
 		//parseContent();

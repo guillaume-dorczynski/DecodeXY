@@ -128,6 +128,7 @@ document.body.onpaste = (e) => {
 		if (e.clipboardData.items) {
 			for (const i of e.clipboardData.items) {
 				loadContent(i, 'p');
+				break; // fixme
 			}
 		}
 	}
@@ -154,6 +155,7 @@ elements.hiddenFileInput.onchange = (e) => {
 	if (e.target.files) {
 		for (const f of e.target.files) {
 			loadContent(f);
+			break; //fixme
 		}
 	}
 	e.target.value = '';
@@ -187,6 +189,7 @@ elements.bigButton.ondrop = (e) => {
 	if (e.dataTransfer.items) {
 		for (const i of e.dataTransfer.items) {
 			loadContent(i, 'd');
+			break; //fixme
 		}
 	}
 };
@@ -202,26 +205,7 @@ elements.bigButton.onmouseout = (e) => {
 	e.preventDefault();
 	mouseInside = false;
 };
-/*
-let buttonPressed = false;
 
-elements.bigButton.onmousedown = (e) => {
-	e.stopPropagation();
-	e.preventDefault();
-	if (e.button === 0) {
-		buttonPressed = true;
-	}
-};
-
-elements.bigButton.onmouseup = (e) => {
-	e.stopPropagation();
-	e.preventDefault();
-	if (buttonPressed) {
-		elements.hiddenFileInput.click();
-		buttonPressed = false;
-	}
-};
-*/
 elements.bigButton.onclick = (e) => {
 	e.stopPropagation();
 	e.preventDefault();

@@ -146,15 +146,15 @@ const textAtPos = (n, p) => {
 };
 
 const parser = (title, content) => {
+	console.log('\nParser started');
 	let c = content;
 	let parsedData = [];
 	let arrays = [];
 	let structs = [];
 
-	console.log('Removing comments...\n');
 	c = c.replace(reComment, (m) => ' '.repeat(m.length));
 
-	console.log('Searching structs...\n');
+	console.log('  Searching structs');
 	for (const m of c.matchAll(reStruct)) {
 		const s = {
 			startPos: m.index,
@@ -189,18 +189,19 @@ const parser = (title, content) => {
 
 	const structsLenght = structs.length;
 	if (structsLenght === 0) {
-		console.warn("Couldn't find any struct!\n");
+		console.warn('    No struct found!');
 		return;
 	} else {
-		console.info('Found ' + structsLenght + ' struct' + (structsLenght > 1 ? 's.\n' : '.\n'));
+		console.info('    Found ' + structsLenght + ' struct' + (structsLenght > 1 ? 's' : ''));
 	}
 
-	console.log('Searching arrays...\n');
+	console.log('  Searching arrays');
 	const headerSize = 10;
 	for (const m of c.matchAll(reArray)) {
 		if (m[3]) {
 			let i = 0;
 			const an = [];
+
 			for (const m2 of m[3].matchAll(reArrayData)) {
 				let n;
 				if (m2) {
@@ -234,7 +235,7 @@ const parser = (title, content) => {
 					endPos: m.index + m[0].length,
 					name: m[1],
 					size: m[2] ? Number(m[2]) : -1,
-					allBytes: an,
+					//allBytes: an,
 					header: {
 						values: [],
 						bytes: [],
@@ -283,7 +284,7 @@ const parser = (title, content) => {
 				let j = 0;
 				while (j < headerSize) {
 					a.header.bytes[j] = an[j];
-					a.header.values[j] = a.header.bytes[j].toString();
+					a.header.values[j] = an[j].toString();
 					j++;
 				}
 				while (j < i - 1) {
@@ -311,6 +312,7 @@ const parser = (title, content) => {
 					if (a.header.flags.pagesEnabled === 1) {
 						e.pageId = an[++j];
 					}
+
 					switch (e.category) {
 						case category.input: {
 							switch (e.type) {
@@ -534,10 +536,10 @@ const parser = (title, content) => {
 
 	const arraysLenght = arrays.length;
 	if (arraysLenght === 0) {
-		console.warn("Couldn't find any arrays! Aborting...\n");
+		console.warn('    No array found!');
 		return;
 	} else {
-		console.info('Found ' + arraysLenght + ' array' + (arraysLenght > 1 ? 's.\n' : '.\n'));
+		console.info('    Found ' + arraysLenght + ' array' + (arraysLenght > 1 ? 's' : ''));
 		let error = false;
 		for (const [ai, a] of arrays.entries()) {
 			const n = a.header.totalInputs + a.header.totalOutputs;
@@ -622,7 +624,6 @@ const parser = (title, content) => {
 							a.structId = si;
 							s.arrayId = ai;
 							s.otherVarsIdx = j;
-							console.log('Array "' + a.name + '" matched with Struct "' + s.objectName + '"\n');
 							parsedData.push({ array: a, struct: s });
 						}
 					}
@@ -630,9 +631,10 @@ const parser = (title, content) => {
 			}
 		}
 
+		console.log('Parser finished');
+
 		if (parsedData.length > 0) {
 			formatter(title, content, parsedData);
-			console.json(parsedData, 'parsedData');
 		}
 	}
 };

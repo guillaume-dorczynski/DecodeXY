@@ -9,15 +9,12 @@ for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
 			if (f === 'json') {
 				const tree = new JSONFormatter(
 					arguments[0],
-					Infinity,
+					2,
 					{
-						hoverPreviewEnabled: true,
-						hoverPreviewArrayCount: 100,
-						hoverPreviewFieldCount: 5,
 						theme: 'custom',
-						animateOpen: true,
-						animateClose: true,
-						useToJSON: true,
+						animateOpen: false,
+						animateClose: false,
+						//sortPropertiesBy: (a, b) => a.toLowerCase().localeCompare(b.toLowerCase()),
 					},
 					arguments[1],
 				);
@@ -27,9 +24,10 @@ for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
 				div = document.createElement('div');
 				if (f === 'info') {
 					div.style.color = 'rgb(50,150,250)';
-				}
-				if (f === 'error') {
+				} else if (f === 'error') {
 					div.style.color = 'rgb(255,128,128)';
+				} else if (f === 'warn') {
+					div.style.color = 'rgb(255,165,0)';
 				}
 				div.classList.add(f);
 				div.innerText = Array.prototype.slice.call(arguments).join(' ');
@@ -39,13 +37,6 @@ for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
 		};
 	})(console[f], f);
 }
-
-/*
-const isPrintable = (char) => {
-	//eslint-disable-next-line no-control-regex
-	return !RegExp('[\\x00-\\x08\\x0E-\\x1F\\x80-\\xFF]').test(char);
-};
-*/
 
 const clearConsole = () => {
 	consoleElement.innerText = '';
