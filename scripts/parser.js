@@ -7,7 +7,7 @@ const reComment = new RegExp(
 	"(?:\\/\\*[^]*?\\*\\/)" + // search "/*" and any characters until "*/"
 	"|" +                     // or
 	"(?:\\/\\/.*)",           // search "//" and any characters until line terminator
-	"g",
+	"g"
 );
 
 // Regex to find arrays looking like RemoteXY_CONF, to be validated afterward.
@@ -20,18 +20,18 @@ const reArray = new RegExp(
 	"\\s*=\\s*{" +                // skip any whitespaces until "=", skip any whitespaces until "{"
 	"\\s*([^]+?),?" +             // skip any whitespaces and capture array content (group 3) until a possible "," at the last value of the array
 	"\\s*}\\s*;",                 // skip any whitespaces until "}", skip any whitespaces until ";"
-	"g",
+	"g"
 );
 
 // Regex to extract array content
 // prettier-ignore
 const reArrayData = new RegExp(
 	"(-?\\s*\\b(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\b)" +    // capture number in range 0-255, possibly negative (group 1)
-	"|'([^\\\\]|\\\\[^\\d]|\\d)'" +                                          // or character like 'c' or '\n' (group 2)
+	"|'([^\\\\]|\\\\[^\\d]|\\d)'" +                                           // or character like 'c' or '\n' (group 2)
 	"|(0x[0-9a-fA-F]{1,2}|'\\\\x[0-9a-fA-F]{1,2}'|'\\\\u00[0-9a-fA-F]{2}')" + // or hex value like 0x63, '\x63', or '\u0063' (group 3)
 	"|'(\\\\\\d{1,3})'" +                                                     // or octal value like '\143' (group 4)
 	"|((?:0b|0B|B)\\d{1,8})",                                                 // or binary value like 0b1100011 or B1100011 (group 5)
-	'g'
+	"g"
 );
 
 // Regex to search structs
@@ -51,9 +51,9 @@ const reStruct = new RegExp(
 // prettier-ignore
 const reStructData = new RegExp(
 	"(bool|int8_t|uint8_t|char|int16_t|uint16_t|float)" + // capture variable-type (group 1)
-	"\\s+([^\\s]+?)" +                               // skip at least one whitespace, capture variable-name (group 2)
-	"\\s*(?:\\[\\s*(\\d+)\\s*\\])?\\s*\\;",          // skip any whitespaces, try capture variable-size (group 3) between [], until any whitespaces and ";"
-	"g",
+	"\\s+([^\\s]+?)" +                                    // skip at least one whitespace, capture variable-name (group 2)
+	"\\s*(?:\\[\\s*(\\d+)\\s*\\])?\\s*\\;",               // skip any whitespaces, try capture variable-size (group 3) between [], until any whitespaces and ";"
+	"g"
 );
 
 const reSpaces = new RegExp('\\s*', 'g');
@@ -135,7 +135,7 @@ const textAtPos = (n, p) => {
 		const c = String.fromCharCode(b);
 		const e = escapedCharacters[c];
 		an.push(b);
-		ac.push(b >= 0 && b <= 127 ? "'" + (e ? e : c) + "'" : b.toString());
+		ac.push(e || (b >= 32 && b <= 127) ? "'" + (e ? e : c) + "'" : b.toString());
 		i++;
 	}
 
