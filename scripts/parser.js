@@ -220,6 +220,10 @@ const parser = (title, content) => {
 					} else if (m2[5]) {
 						n = parseInt(m2[5].substring(m2[5].charAt(0) === 'B' ? 1 : 2), 2);
 					}
+				}
+				if (n === undefined) {
+					break;
+				} else {
 					an[i++] = n;
 				}
 			}
