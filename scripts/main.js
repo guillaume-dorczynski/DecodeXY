@@ -13,5 +13,3 @@ if (getSetting('showTooltips') === false) {
 }
 
 drawView();
-
-console.log('Ready');

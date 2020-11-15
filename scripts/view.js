@@ -4,8 +4,8 @@ import '/styles/tooltips.css';
 import '/styles/json-formatter.less';
 import { setSetting, saveSettings, resetSettingsControls } from './settings.js';
 import { loadContent } from './loader.js';
-import { clearConsole, scrollConsoleToBottom } from './console.js';
-import { downloadCode, resetCode } from './codebox.js';
+import { clearConsole, copyConsole, scrollConsoleToBottom } from './console.js';
+import { downloadCode, resetCode, copyCode } from './codebox.js';
 import { resetFormatter } from './formatter.js';
 
 window.onbeforeunload = () => saveSettings();
@@ -22,7 +22,6 @@ const elements = {
 	buttonDownloadCode: true,
 	settingsContainer: true,
 	consoleContainer: true,
-	hiddenTextArea: true,
 	hiddenFileInput: true,
 	bigButton: true,
 	buttonResetCode: true,
@@ -58,11 +57,11 @@ elements.buttonClearConsole.onclick = () => {
 };
 
 elements.buttonCopyConsole.onclick = () => {
-	copyToClipboard('console', 'Console');
+	copyConsole();
 };
 
 elements.buttonCopyCode.onclick = () => {
-	copyToClipboard('codeBox', 'Code');
+	copyCode();
 };
 
 elements.buttonDownloadCode.onclick = () => {
@@ -93,16 +92,6 @@ const toggleConsole = (v) => {
 	}
 	elements.buttonShowConsole.hidden = v;
 	setSetting('consoleVisible', v);
-};
-
-const copyToClipboard = (i, n) => {
-	const a = elements.hiddenTextArea;
-	const e = document.getElementById(i);
-	a.value = e.textContent;
-	a.select();
-	document.execCommand('copy');
-	a.value = '';
-	console.info(n + ' has been copied to clipboard.');
 };
 
 document.body.ondragenter = (e) => {

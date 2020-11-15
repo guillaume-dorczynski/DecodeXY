@@ -27,13 +27,15 @@ const resetFormatter = () => {
 };
 
 const formatter = (t, c, d) => {
-	console.log('\nFormatter started');
 	if (!formatterData) {
 		if (!t && !c && !d) {
 			return;
 		}
 		formatterData = { title: t, content: c, data: d };
 	}
+
+	console.log('Formatter started');
+
 	let title = formatterData.title;
 	let content = formatterData.content;
 	let parsedData = clone(formatterData.data);
@@ -318,9 +320,7 @@ const formatter = (t, c, d) => {
 		replaceVarValue(sn, s.variables[s.otherVarsIdx].name);
 	}
 
-	//console.log(content.length);
 	content = content.replace(reLineEndings, lineEnding);
-	//console.log(content.length);
 
 	if (settings.removeComments === true) {
 		for (const c of reCommentsList) {
@@ -333,8 +333,8 @@ const formatter = (t, c, d) => {
 	setCode(title, content);
 
 	console.log('Formatter finished\n\n');
-
 	console.json(parsedData, 'Project data');
+	console.log('\n');
 };
 
 export { formatter, resetFormatter };

@@ -228,17 +228,6 @@ body {
 	right: 0px;
 }
 
-.hiddenTextArea {
-	position: absolute;
-	opacity: 0.01;
-	height: 0px;
-	width: 0px;
-	overflow: hidden;
-	user-select: none;
-	resize: none;
-	z-index: -1;
-}
-
 .button {
 	cursor: pointer;
 	padding: 0px;
@@ -491,23 +480,3 @@ code {
 	background-color: #303030;
 	tab-size: 4;
 }
-/*
-.json-formatter-row {
-	white-space: pre !important;
-	word-break: normal !important;
-
-	.theme(
-    @default-color: white,
-    @string-color: red,
-    @number-color: #66c2ff,
-    @boolean-color: #EC4242,
-    @null-color: #EEC97D,
-    @undefined-color: rgb(239, 143, 190),
-    @function-color: #FD48CB,
-    @rotate-time: 100ms,
-    @toggler-opacity: 0.6,
-    @toggler-color: #45376f,
-    @bracket-color: #9494ff,
-    @key-color: #23a0db,
-    @url-color: #027bff);
-} */

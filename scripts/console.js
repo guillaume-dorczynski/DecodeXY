@@ -30,7 +30,7 @@ for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
 					div.style.color = 'rgb(255,165,0)';
 				}
 				div.classList.add(f);
-				div.innerText = Array.prototype.slice.call(arguments).join(' ');
+				div.textContent = Array.prototype.slice.call(arguments).join(' ');
 			}
 			consoleElement.appendChild(div);
 			consoleElement.scrollIntoView(false);
@@ -39,16 +39,26 @@ for (const f of ['log', 'debug', 'info', 'warn', 'error', 'json']) {
 }
 
 const clearConsole = () => {
-	consoleElement.innerText = '';
+	consoleElement.textContent = '';
 };
 
 const copyConsole = () => {
-	const e = document.getElementById('hiddenTextArea');
-	e.value = consoleElement.innerText;
-	e.select();
-	document.execCommand('copy');
-	e.value = '';
-	console.info('Console has been copied to clipboard.');
+	if (consoleElement.textContent !== '') {
+		navigator.permissions.query({ name: 'clipboard-write' }).then((r) => {
+			if (r.state === 'granted') {
+				navigator.clipboard.writeText(consoleElement.textContent).then(
+					() => {
+						console.info('Console has been copied to clipboard.');
+					},
+					() => {
+						console.warn('Failed to copy console to clipboard...');
+					},
+				);
+			} else {
+				console.warn('Permission "clipboard-write" denied...');
+			}
+		});
+	}
 };
 
 const scrollConsoleToBottom = () => {

@@ -146,7 +146,7 @@ const textAtPos = (n, p) => {
 };
 
 const parser = (title, content) => {
-	console.log('\nParser started');
+	console.log('Parser started');
 	let c = content;
 	let parsedData = [];
 	let arrays = [];
@@ -631,7 +631,7 @@ const parser = (title, content) => {
 			}
 		}
 
-		console.log('Parser finished');
+		console.log('Parser finished\n\n');
 
 		if (parsedData.length > 0) {
 			formatter(title, content, parsedData);
