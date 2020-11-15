@@ -27,12 +27,8 @@ const copyCode = () => {
 		navigator.permissions.query({ name: 'clipboard-write' }).then((r) => {
 			if (r.state === 'granted') {
 				navigator.clipboard.writeText(codeText).then(
-					() => {
-						console.info('Code has been copied to clipboard.\n\n');
-					},
-					() => {
-						console.warn('Failed to copy code to clipboard...\n\n');
-					},
+					() => console.info('Code has been copied to clipboard.\n\n'),
+					() => console.warn('Failed to copy code to clipboard...\n\n'),
 				);
 			} else {
 				console.warn('Permission "clipboard-write" denied...\n\n');

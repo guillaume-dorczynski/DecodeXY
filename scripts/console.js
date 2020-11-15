@@ -46,13 +46,9 @@ const copyConsole = () => {
 	if (consoleElement.textContent !== '') {
 		navigator.permissions.query({ name: 'clipboard-write' }).then((r) => {
 			if (r.state === 'granted') {
-				navigator.clipboard.writeText(consoleElement.textContent).then(
-					() => {
-						console.info('Console has been copied to clipboard.\n\n');
-					},
-					() => {
-						console.warn('Failed to copy console to clipboard...\n\n');
-					},
+				navigator.clipboard.writeText(consoleElement.innerText).then(
+					() => console.info('Console has been copied to clipboard.\n\n'),
+					() => console.warn('Failed to copy console to clipboard...\n\n'),
 				);
 			} else {
 				console.warn('Permission "clipboard-write" denied...\n\n');
