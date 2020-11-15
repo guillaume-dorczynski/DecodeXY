@@ -72,7 +72,6 @@ elements.buttonResetCode.onclick = () => {
 	resetCode();
 	resetFormatter();
 	clearConsole();
-	console.log('Ready');
 };
 
 const drawView = () => {

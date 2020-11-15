@@ -28,14 +28,14 @@ const copyCode = () => {
 			if (r.state === 'granted') {
 				navigator.clipboard.writeText(codeText).then(
 					() => {
-						console.info('Code has been copied to clipboard.');
+						console.info('Code has been copied to clipboard.\n\n');
 					},
 					() => {
-						console.warn('Failed to copy code to clipboard...');
+						console.warn('Failed to copy code to clipboard...\n\n');
 					},
 				);
 			} else {
-				console.warn('Permission "clipboard-write" denied...');
+				console.warn('Permission "clipboard-write" denied...\n\n');
 			}
 		});
 	}
