@@ -150,6 +150,12 @@ const settings = {
 		type: 'checkbox',
 		value: true,
 	},
+	alignVariables: {
+		label: 'Align variables',
+		tooltip: 'This will align variables as a nice column so they are easier to read.',
+		type: 'checkbox',
+		value: true,
+	},
 
 	Other: { label: true },
 	showTooltips: {

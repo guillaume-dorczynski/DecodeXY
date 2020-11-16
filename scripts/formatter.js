@@ -6,6 +6,8 @@ const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
 
 const reEndSpaces = new RegExp('[ \\t]+(?=\\r?\\n)', 'g');
 
+const reSurroundingEmptyLines = new RegExp('^\\s*|(?<=\\r?\\n)\\s*$', 'g');
+
 // prettier-ignore
 const reCommentsList = [
 	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
@@ -20,6 +22,8 @@ const reCommentsList = [
 		'TODO you loop code[^]*do not call delay\\(\\)' +
 		')\\s+', 'g'), ''],
 ];
+
+// \s*.*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface|TODO you setup code|TODO you loop code[^]*do not call delay\(\))\s+
 
 const deepCopy = (o) => {
 	if (typeof o !== 'object' || o === null) {
@@ -91,16 +95,20 @@ const formatter = (t, c, d) => {
 			s.variables[s.otherVarsIdx].type = 'uint8_t';
 		}
 
-		s.maxVarTypeLength = 4;
-		for (const e of a.elements.all) {
-			if (e.structVar !== undefined && s.maxVarTypeLength < e.structVar.type.length) {
-				s.maxVarTypeLength = e.structVar.type.length;
+		let varTypePadding = 0;
+		if (settings.alignVariables === true) {
+			s.maxVarTypeLength = 4;
+			for (const e of a.elements.all) {
+				if (e.structVar !== undefined && s.maxVarTypeLength < e.structVar.type.length) {
+					s.maxVarTypeLength = e.structVar.type.length;
+				}
 			}
+			varTypePadding = s.maxVarTypeLength;
 		}
 
 		const structVarToString = (v) => {
 			let r = '';
-			let h = indent + v.type.padEnd(s.maxVarTypeLength + 1, ' ');
+			let h = indent + (varTypePadding === 0 ? v.type : v.type.padEnd(varTypePadding, ' ')) + ' ';
 			if (settings.structVarsToArray === false && v.names) {
 				for (const n of v.names) {
 					r += h + n + ';' + lineEnding;
@@ -345,6 +353,8 @@ const formatter = (t, c, d) => {
 	content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
 
 	content = content.replace(reEndSpaces, '');
+
+	content = (content + lineEnding).replace(reSurroundingEmptyLines, '');
 
 	setCode(title, content);
 
