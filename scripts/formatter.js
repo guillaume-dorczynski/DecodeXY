@@ -4,7 +4,7 @@ import { setCode } from './codebox.js';
 
 const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
 
-const reEndSpaces = new RegExp('([ \\t])+(?=\\r?\\n)', 'g');
+const reEndSpaces = new RegExp('[ \\t]+(?=\\r?\\n)', 'g');
 
 // prettier-ignore
 const reCommentsList = [
