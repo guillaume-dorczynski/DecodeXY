@@ -100,6 +100,12 @@ const category = {
 	decoration: 2,
 };
 
+const editFieldType = {
+	text: 0,
+	float: 1,
+	integer: 2,
+};
+
 const inputType = {
 	button: 1,
 	switch: 2,
@@ -230,6 +236,8 @@ const parser = (title, content) => {
 			}
 
 			if (i >= headerSize && an[0] === 255 && i === ((an[6] << 8) | an[5]) + 7) {
+				let j = 0;
+				let k = 0;
 				const a = {
 					startPos: m.index,
 					endPos: m.index + m[0].length,
@@ -281,7 +289,6 @@ const parser = (title, content) => {
 					},
 				};
 
-				let j = 0;
 				while (j < headerSize) {
 					a.header.bytes[j] = an[j];
 					a.header.values[j] = an[j].toString();
@@ -324,7 +331,7 @@ const parser = (title, content) => {
 									e.texts = [textAtPos(an, ++j)];
 									j = e.texts[0].endPos;
 									e.structVar = { type: 'uint8_t', size: 1, type2: 'bool' };
-									a.elements.inputs.buttons.push(e);
+									a.elements.inputs.buttons.push(k);
 									break;
 								}
 								case inputType.switch: {
@@ -338,7 +345,7 @@ const parser = (title, content) => {
 									e.texts[1] = textAtPos(an, e.texts[0].endPos + 1);
 									j = e.texts[1].endPos;
 									e.structVar = { type: 'uint8_t', size: 1, type2: 'bool' };
-									a.elements.inputs.switches.push(e);
+									a.elements.inputs.switches.push(k);
 									break;
 								}
 								case inputType.select: {
@@ -347,7 +354,7 @@ const parser = (title, content) => {
 									e.buttonColor = an[++j];
 									e.backgroundColor = an[++j];
 									e.structVar = { type: 'uint8_t', size: 1 };
-									a.elements.inputs.selects.push(e);
+									a.elements.inputs.selects.push(k);
 									break;
 								}
 								case inputType.slider: {
@@ -357,7 +364,7 @@ const parser = (title, content) => {
 									e.buttonColor = an[++j];
 									e.backgroundColor = an[++j];
 									e.structVar = { type: 'int8_t', size: 1 };
-									a.elements.inputs.sliders.push(e);
+									a.elements.inputs.sliders.push(k);
 									break;
 								}
 								case inputType.joystick: {
@@ -367,14 +374,14 @@ const parser = (title, content) => {
 									e.backgroundColor = an[++j];
 									e.textColor = an[++j];
 									e.structVar = { type: 'int8_t', size: 2 };
-									a.elements.inputs.joysticks.push(e);
+									a.elements.inputs.joysticks.push(k);
 									break;
 								}
 								case inputType.colorPicker: {
 									e.buttonColor = an[++j];
 									e.backgroundColor = an[++j];
 									e.structVar = { type: 'uint8_t', size: 3 };
-									a.elements.inputs.colorPickers.push(e);
+									a.elements.inputs.colorPickers.push(k);
 									break;
 								}
 								case inputType.editField: {
@@ -385,23 +392,23 @@ const parser = (title, content) => {
 									e.textColor = an[++j];
 									e.backgroundColor = an[++j];
 									e.buttonColor = an[++j];
-									if (e.inputType === 0b00) {
+									if (e.inputType === editFieldType.text) {
 										e.maxTextLength = an[++j];
 										e.structVar = { type: 'char', size: e.maxTextLength };
-									} else if (e.inputType === 0b01) {
+									} else if (e.inputType === editFieldType.float) {
 										e.maxDecimals = an[++j];
 										e.structVar = { type: 'float', size: 1 };
-									} else if (e.inputType === 0b10) {
+									} else if (e.inputType === editFieldType.integer) {
 										e.structVar = { type: 'int16_t', size: 1 };
 									}
-									a.elements.inputs.editFields.push(e);
+									a.elements.inputs.editFields.push(k);
 									break;
 								}
 								default: {
 									break;
 								}
 							}
-							a.elements.inputs.all.push(e);
+							a.elements.inputs.all.push(k);
 							if (e.structVar.size > 0) {
 								a.elements.totalInputs += e.structVar.size * sizeOfType[e.structVar.type];
 							}
@@ -419,7 +426,7 @@ const parser = (title, content) => {
 											e.structVar.size++;
 										}
 									}
-									a.elements.outputs.leds.push(e);
+									a.elements.outputs.leds.push(k);
 									break;
 								}
 								case outputType.level: {
@@ -429,7 +436,7 @@ const parser = (title, content) => {
 									e.color = an[++j];
 									e.backgroundColor = an[++j];
 									e.structVar = { type: 'int8_t', size: 1 };
-									a.elements.outputs.levels.push(e);
+									a.elements.outputs.levels.push(k);
 									break;
 								}
 								case outputType.textString: {
@@ -439,7 +446,7 @@ const parser = (title, content) => {
 									e.backgroundColor = an[++j];
 									e.maxTextLength = an[++j];
 									e.structVar = { type: 'char', size: e.maxTextLength };
-									a.elements.outputs.textStrings.push(e);
+									a.elements.outputs.textStrings.push(k);
 									break;
 								}
 								case outputType.onlineGraph: {
@@ -459,7 +466,7 @@ const parser = (title, content) => {
 											j = e.texts[i].endPos;
 										}
 									}
-									a.elements.outputs.onlineGraphs.push(e);
+									a.elements.outputs.onlineGraphs.push(k);
 									break;
 								}
 								case outputType.sound: {
@@ -468,14 +475,14 @@ const parser = (title, content) => {
 									if (e.hide === 0) {
 										e.color = an[++j];
 									}
-									a.elements.outputs.sounds.push(e);
+									a.elements.outputs.sounds.push(k);
 									break;
 								}
 								default: {
 									break;
 								}
 							}
-							a.elements.outputs.all.push(e);
+							a.elements.outputs.all.push(k);
 							if (e.structVar.size > 0) {
 								a.elements.totalOutputs += e.structVar.size * sizeOfType[e.structVar.type];
 							}
@@ -488,14 +495,14 @@ const parser = (title, content) => {
 									e.textColor = an[++j];
 									e.texts = [textAtPos(an, ++j)];
 									j = e.texts[0].endPos;
-									a.elements.decorations.labels.push(e);
+									a.elements.decorations.labels.push(k);
 									break;
 								}
 								case decorationType.panel: {
 									e.panelId = a.elements.decorations.panels.length + 1;
 									e.bevel = e.flags & 0b00000011;
 									e.color = an[++j];
-									a.elements.decorations.panels.push(e);
+									a.elements.decorations.panels.push(k);
 									break;
 								}
 								case decorationType.page: {
@@ -505,14 +512,14 @@ const parser = (title, content) => {
 									e.textColor = an[++j];
 									e.texts = [textAtPos(an, ++j)];
 									j = e.texts[0].endPos;
-									a.elements.decorations.pages.push(e);
+									a.elements.decorations.pages.push(k);
 									break;
 								}
 								default: {
 									break;
 								}
 							}
-							a.elements.decorations.all.push(e);
+							a.elements.decorations.all.push(k);
 							break;
 						}
 						default: {
@@ -526,6 +533,7 @@ const parser = (title, content) => {
 					}
 					a.elements.totalBytes += e.bytes.length;
 					a.elements.all.push(e);
+					k++;
 				}
 				if (i === j && a.elements.totalInputs === a.header.totalInputs && a.elements.totalOutputs === a.header.totalOutputs) {
 					arrays.push(a);
@@ -550,7 +558,7 @@ const parser = (title, content) => {
 						let i = 0;
 						let j = 0;
 						for (; i < elements.length; i++) {
-							const e = elements[i];
+							const e = a.elements.all[elements[i]];
 							const esv = e.structVar;
 							if (esv.size > 0) {
 								let sv = s.variables[j];

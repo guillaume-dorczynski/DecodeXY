@@ -1,9 +1,10 @@
 import { getSettings } from './settings.js';
 import { category, inputType, outputType, decorationType } from './parser.js';
 import { setCode } from './codebox.js';
-import clone from 'clone';
 
 const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
+
+const reEndSpaces = new RegExp('([ \\t])+(?=\\r?\\n)', 'g');
 
 // prettier-ignore
 const reCommentsList = [
@@ -20,6 +21,18 @@ const reCommentsList = [
 		')\\s+', 'g'), ''],
 ];
 
+const deepCopy = (o) => {
+	if (typeof o !== 'object' || o === null) {
+		return o;
+	}
+	let r = Array.isArray(o) ? [] : {};
+	for (const k in o) {
+		let v = o[k];
+		r[k] = deepCopy(v);
+	}
+	return r;
+};
+
 let formatterData = undefined;
 
 const resetFormatter = () => {
@@ -27,7 +40,7 @@ const resetFormatter = () => {
 };
 
 const formatter = (t, c, d) => {
-	if (!formatterData) {
+	if (formatterData === undefined) {
 		if (!t && !c && !d) {
 			return;
 		}
@@ -38,12 +51,15 @@ const formatter = (t, c, d) => {
 
 	let title = formatterData.title;
 	let content = formatterData.content;
-	let parsedData = clone(formatterData.data);
+	let parsedData = deepCopy(formatterData.data);
 
 	const settings = getSettings();
+	const indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
 
 	let lineEnding = '\r\n';
-	if (settings.lineEnding === 0) {
+	if (settings.lineEnding === 1) {
+		lineEnding = '\n';
+	} else if (settings.lineEnding === 0) {
 		const lineEndings = { lineEnding: 0 };
 		for (const m of content.matchAll(reLineEndings)) {
 			const m0 = m[0];
@@ -55,11 +71,7 @@ const formatter = (t, c, d) => {
 			}
 		}
 		lineEnding = Object.keys(lineEndings).reduce((a, b) => (lineEndings[a] > lineEndings[b] ? a : b));
-	} else if (settings.lineEnding === 1) {
-		lineEnding = '\n';
 	}
-
-	const indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
 
 	for (const d of parsedData) {
 		const a = d.array;
@@ -68,11 +80,11 @@ const formatter = (t, c, d) => {
 		s.original = content.substring(s.startPos, s.endPos);
 
 		if (settings.structVarsToBools === true) {
-			for (const e of a.elements.inputs.buttons) {
-				e.structVar.type = 'bool';
+			for (const i of a.elements.inputs.buttons) {
+				a.elements.all[i].structVar.type = 'bool';
 			}
-			for (const e of a.elements.inputs.switches) {
-				e.structVar.type = 'bool';
+			for (const i of a.elements.inputs.switches) {
+				a.elements.all[i].structVar.type = 'bool';
 			}
 			s.variables[s.otherVarsIdx].type = 'bool';
 		} else {
@@ -103,7 +115,8 @@ const formatter = (t, c, d) => {
 
 		if (a.elements.inputs.all.length > 0) {
 			f += lineEnding + indent + '// Inputs' + lineEnding;
-			for (const e of a.elements.inputs.all) {
+			for (const i of a.elements.inputs.all) {
+				const e = a.elements.all[i];
 				if (e.structVar.name) {
 					f += structVarToString(e.structVar);
 				}
@@ -112,7 +125,8 @@ const formatter = (t, c, d) => {
 
 		if (a.elements.outputs.all.length > 0) {
 			f += lineEnding + indent + '// Outputs' + lineEnding;
-			for (const e of a.elements.outputs.all) {
+			for (const i of a.elements.outputs.all) {
+				const e = a.elements.all[i];
 				if (e.structVar.name) {
 					f += structVarToString(e.structVar);
 				}
@@ -311,11 +325,11 @@ const formatter = (t, c, d) => {
 	for (const d of parsedData) {
 		const s = d.struct;
 		const sn = s.objectName;
-		for (const e of d.array.elements.inputs.buttons) {
-			replaceVarValue(sn, e.structVar.name);
+		for (const i of d.array.elements.inputs.buttons) {
+			replaceVarValue(sn, d.array.elements.all[i].structVar.name);
 		}
-		for (const e of d.array.elements.inputs.switches) {
-			replaceVarValue(sn, e.structVar.name);
+		for (const i of d.array.elements.inputs.switches) {
+			replaceVarValue(sn, d.array.elements.all[i].structVar.name);
 		}
 		replaceVarValue(sn, s.variables[s.otherVarsIdx].name);
 	}
@@ -329,6 +343,8 @@ const formatter = (t, c, d) => {
 	}
 
 	content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
+
+	content = content.replace(reEndSpaces, '');
 
 	setCode(title, content);
 
