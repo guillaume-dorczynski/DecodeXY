@@ -9,7 +9,7 @@ const reEndSpaces = new RegExp('[ \\t]+(?=\\r?\\n)', 'g');
 const reSurroundingEmptyLines = new RegExp('^\\s*|(?<=\\r?\\n)\\s*$', 'g');
 
 // prettier-ignore
-const reCommentsList = [
+/*const reCommentsList = [
 	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
 	[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+', 'g'), ''],
 	//[new RegExp('^\\s?\\.*\\/\\/\\s*(?:' +
@@ -21,21 +21,14 @@ const reCommentsList = [
 		'TODO you setup code|' +
 		'TODO you loop code[^]*do not call delay\\(\\)' +
 		')\\s+', 'g'), ''],
+];*/
+
+const reCommentsList = [
+	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
+	[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+\\s*', 'g'), ''],
+	//[new RegExp('^\\s*\\/\\/\\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\\s*$$$$', 'gm'), ''],
+	[/^\s*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\s*$/gm, ''],
 ];
-
-// \s*.*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface|TODO you setup code|TODO you loop code[^]*do not call delay\(\))\s+
-
-const deepCopy = (o) => {
-	if (typeof o !== 'object' || o === null) {
-		return o;
-	}
-	let r = Array.isArray(o) ? [] : {};
-	for (const k in o) {
-		let v = o[k];
-		r[k] = deepCopy(v);
-	}
-	return r;
-};
 
 let formatterData = undefined;
 
@@ -55,7 +48,7 @@ const formatter = (t, c, d) => {
 
 	let title = formatterData.title;
 	let content = formatterData.content;
-	let parsedData = deepCopy(formatterData.data);
+	let parsedData = formatterData.data;
 
 	const settings = getSettings();
 	const indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
@@ -83,17 +76,11 @@ const formatter = (t, c, d) => {
 		a.original = content.substring(a.startPos, a.endPos);
 		s.original = content.substring(s.startPos, s.endPos);
 
-		if (settings.structVarsToBools === true) {
-			for (const i of a.elements.inputs.buttons) {
-				a.elements.all[i].structVar.type = 'bool';
-			}
-			for (const i of a.elements.inputs.switches) {
-				a.elements.all[i].structVar.type = 'bool';
-			}
-			s.variables[s.otherVarsIdx].type = 'bool';
-		} else {
-			s.variables[s.otherVarsIdx].type = 'uint8_t';
+		const t = settings.structVarsToBools === true ? 'bool' : 'uint8_t';
+		for (const i of [...a.elements.inputs.buttons, ...a.elements.inputs.switches]) {
+			a.elements.all[i].structVar.type = t;
 		}
+		s.variables[s.otherVarsIdx].type = t;
 
 		let varTypePadding = 0;
 		if (settings.alignVariables === true) {
@@ -291,25 +278,17 @@ const formatter = (t, c, d) => {
 		content = content.replace(d.struct.original, d.struct.formatted);
 	}
 
-	if (settings.structVarsToArray === true) {
-		for (const d of parsedData) {
-			const sn = d.struct.objectName;
-			for (const e of d.array.elements.all) {
-				const esv = e.structVar;
-				if (esv && esv.names) {
+	for (const d of parsedData) {
+		const sn = d.struct.objectName;
+		for (const e of d.array.elements.all) {
+			const esv = e.structVar;
+			if (esv && esv.names) {
+				if (settings.structVarsToArray === true) {
 					for (const [ni, n] of esv.names.entries()) {
 						const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.)' + n, 'g');
 						content = content.replace(re, (m, m1) => m1 + esv.name + '[' + ni + ']');
 					}
-				}
-			}
-		}
-	} else {
-		for (const d of parsedData) {
-			const sn = d.struct.objectName;
-			for (const e of d.array.elements.all) {
-				const esv = e.structVar;
-				if (esv && esv.names) {
+				} else {
 					const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.)' + esv.name + '\\s*(?:\\[(\\d+)])', 'g');
 					content = content.replace(re, (m, m1, m2) => (esv.names[m2] ? m1 + esv.names[m2] : '// ' + m));
 				}
@@ -317,32 +296,19 @@ const formatter = (t, c, d) => {
 		}
 	}
 
-	let replaceVarValue;
-	if (settings.structVarsToBools === true) {
-		replaceVarValue = (sn, n) => {
-			const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(0|1)', 'g');
-			content = content.replace(re, (m, m1, m2) => m1 + (m2 === '0' ? 'false' : 'true'));
-		};
-	} else {
-		replaceVarValue = (sn, n) => {
-			const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(false|true)', 'g');
-			content = content.replace(re, (m, m1, m2) => m1 + (m2 === 'false' ? '0' : '1'));
-		};
-	}
-
+	const r = settings.structVarsToBools === true ? ['0', '1', 'false', 'true'] : ['false', 'true', '0', '1'];
+	const replaceVarValue = (sn, n) => {
+		const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(' + r[0] + '|' + r[1] + ')', 'g');
+		content = content.replace(re, (m, m1, m2) => m1 + (m2 === r[0] ? r[2] : r[3]));
+	};
 	for (const d of parsedData) {
 		const s = d.struct;
 		const sn = s.objectName;
-		for (const i of d.array.elements.inputs.buttons) {
-			replaceVarValue(sn, d.array.elements.all[i].structVar.name);
-		}
-		for (const i of d.array.elements.inputs.switches) {
+		for (const i of [...d.array.elements.inputs.buttons, ...d.array.elements.inputs.switches]) {
 			replaceVarValue(sn, d.array.elements.all[i].structVar.name);
 		}
 		replaceVarValue(sn, s.variables[s.otherVarsIdx].name);
 	}
-
-	content = content.replace(reLineEndings, lineEnding);
 
 	if (settings.removeComments === true) {
 		for (const c of reCommentsList) {
@@ -351,9 +317,8 @@ const formatter = (t, c, d) => {
 	}
 
 	content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
-
+	content = content.replace(reLineEndings, lineEnding);
 	content = content.replace(reEndSpaces, '');
-
 	content = (content + lineEnding).replace(reSurroundingEmptyLines, '');
 
 	setCode(title, content);
