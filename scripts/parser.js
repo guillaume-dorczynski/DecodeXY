@@ -26,11 +26,11 @@ const reArray = new RegExp(
 // Regex to extract array content
 // prettier-ignore
 const reArrayData = new RegExp(
-	"(-?\\s*\\b(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\b)" +    // capture number in range 0-255, possibly negative (group 1)
-	"|'([^\\\\]|\\\\[^\\d]|\\d)'" +                                           // or character like 'c' or '\n' (group 2)
-	"|(0x[0-9a-fA-F]{1,2}|'\\\\x[0-9a-fA-F]{1,2}'|'\\\\u00[0-9a-fA-F]{2}')" + // or hex value like 0x63, '\x63', or '\u0063' (group 3)
-	"|'(\\\\\\d{1,3})'" +                                                     // or octal value like '\143' (group 4)
-	"|((?:0b|0B|B)\\d{1,8})",                                                 // or binary value like 0b1100011 or B1100011 (group 5)
+	"\\s*(-?\\s*\\b(?:[0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])\\b)" + // capture number in range 0-255, possibly negative (group 1)
+	"|'([^\\\\]|\\\\[^\\d]|\\d)'" +                                            // or character like 'c' or '\n' (group 2)
+	"|(0x[0-9a-fA-F]{1,2}|'\\\\x[0-9a-fA-F]{1,2}'|'\\\\u00[0-9a-fA-F]{2}')" +  // or hex value like 0x63, '\x63', or '\u0063' (group 3)
+	"|'(\\\\\\d{1,3})'" +                                                      // or octal value like '\143' (group 4)
+	"|((?:0b|0B|B)\\d{1,8})",                                                  // or binary value like 0b1100011 or B1100011 (group 5)
 	"g"
 );
 
@@ -71,7 +71,6 @@ const escapedCharacters = {
 	'\\r': '\r',
 	'\\t': '\t',
 	'\\v': '\v',
-	$$: '$',
 };
 
 for (const [k, v] of Object.entries(escapedCharacters)) {
@@ -209,6 +208,7 @@ const parser = (title, content) => {
 			const an = [];
 
 			for (const m2 of m[3].matchAll(reArrayData)) {
+				console.log(m2);
 				let n;
 				if (m2) {
 					if (m2[1]) {
@@ -243,7 +243,6 @@ const parser = (title, content) => {
 					endPos: m.index + m[0].length,
 					name: m[1],
 					size: m[2] ? Number(m[2]) : -1,
-					//allBytes: an,
 					header: {
 						values: [],
 						bytes: [],

@@ -73,6 +73,7 @@ const formatter = (t, c, d) => {
 	for (const d of parsedData) {
 		const a = d.array;
 		const s = d.struct;
+		a.maxLineLength = 0;
 		a.original = content.substring(a.startPos, a.endPos);
 		s.original = content.substring(s.startPos, s.endPos);
 
@@ -211,7 +212,7 @@ const formatter = (t, c, d) => {
 			}
 			for (const e of a.elements.all) {
 				for (let i = 0; i < e.values.length; i++) {
-					e.values[i] = e.values[i].padStart(e.values[i] === "'$$'" ? vp + 1 : vp, ' ');
+					e.values[i] = e.values[i].padStart(vp, ' ');
 				}
 			}
 		}
@@ -274,8 +275,8 @@ const formatter = (t, c, d) => {
 	}
 
 	for (const d of parsedData) {
-		content = content.replace(d.array.original, d.array.formatted);
-		content = content.replace(d.struct.original, d.struct.formatted);
+		content = content.replace(d.array.original, () => d.array.formatted);
+		content = content.replace(d.struct.original, () => d.struct.formatted);
 	}
 
 	for (const d of parsedData) {
