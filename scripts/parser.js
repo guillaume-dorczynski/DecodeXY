@@ -208,7 +208,6 @@ const parser = (title, content) => {
 			const an = [];
 
 			for (const m2 of m[3].matchAll(reArrayData)) {
-				console.log(m2);
 				let n;
 				if (m2) {
 					if (m2[1]) {
