@@ -3,39 +3,14 @@ import { category, inputType, outputType, decorationType } from './parser.js';
 import { setCode } from './codebox.js';
 
 const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
-
 const reEndSpaces = new RegExp('[ \\t]+(?=\\r?\\n)', 'g');
-
-//const reSurroundingEmptyLines = new RegExp('^\\s*|(?<=\\r?\\n)\\s*$', 'g');
 const reSurroundingEmptyLines = new RegExp('^\\s*|\\s*$', 'g');
-
-// prettier-ignore
-/*const reCommentsList = [
+const reReindent = new RegExp('^ {2}(RemoteXY_Init|RemoteXY_Handler|pinMode|digitalWrite|\\/\\/ )\\s*(.*)$', 'gm');
+const reRebrace = new RegExp('\\s*void\\s*(setup|loop)\\s*\\(\\)\\s*{', 'gm');
+const reRemoteXYComments = [
 	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
-	[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+', 'g'), ''],
-	//[new RegExp('^\\s?\\.*\\/\\/\\s*(?:' +
-	[new RegExp('\\s*.*\\/\\/\\s*(?:' +
-		'RemoteXY select connection mode and include library|' +
-		'RemoteXY connection settings|' +
-		'RemoteXY configurate|' +
-		'this structure defines all the variables and events of your control interface|' +
-		'TODO you setup code|' +
-		'TODO you loop code[^]*do not call delay\\(\\)' +
-		')\\s+', 'g'), ''],
-];*/
-
-//const reBadIndent = new RegExp('^  (.*)$', 'gm');
-const reReindent = new RegExp( '^ {2}(RemoteXY_Init|RemoteXY_Handler|pinMode|digitalWrite|\\/\\/ )\\s*(.*)$', 'gm');
-
-const reRebrace = new RegExp('^\\s*void\\s*(setup|loop)\\s*\\(\\)\\s*{', 'gm');
-
-const reCommentsList = [
-	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
-	//[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+\\s*', 'g'), ''],
-	//[new RegExp('^\\s*\\/\\/\\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\\s*$$$$', 'gm'), ''],
-	//[/^\s*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\s*$/gm, ''],
-	[/^[\s/]*(?:(?:END )?RemoteXY (?:include|select|connection|configurate).*|this structure.*interface)[\s/]*$/gm, ' '],
-	//[new RegExp('\\s*\\/\\/ TODO.*(?:code|\\s.*\\s.*delay\\(\\))\\s*\\r?\\n', 'gm')],
+	//[/^[\s/]*(?:(?:END )?RemoteXY (?:include|select|connection|configurate).*|this structure.*interface)[\s/]*$/gm, ' '],
+	[new RegExp('^[\\s/]*(?:(?:END )?RemoteXY (?:include|select|connection|configurate).*|this structure.*interface)[\\s/]*$', 'gm'), ' '],
 	[new RegExp('\\s* {2}\\/\\/ (TODO.*code|use.*transfer|do.*delay\\(\\))\\s*(?=\\n)', 'gm')],
 	[new RegExp('\\s*(#include <RemoteXY\\.h>)\\s*', 'g'), '\n$1\n'],
 ];
@@ -59,8 +34,6 @@ const formatter = (t, c, d) => {
 	let title = formatterData.title;
 	let content = formatterData.content;
 	let parsedData = formatterData.data;
-
-	console.log(content.replace(/^\s*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\s*$/gm, ''));
 
 	const settings = getSettings();
 	const indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
@@ -309,13 +282,20 @@ const formatter = (t, c, d) => {
 		}
 	}
 
-	const r = settings.structVarsToBools === true ? ['0', '1', 'false', 'true'] : ['false', 'true', '0', '1'];
-	const replaceVarValue = (sn, n) => {
-		const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(' + r[0] + '|' + r[1] + ')', 'g');
-		content = content.replace(re, (m, m1, m2) => m1 + (m2 === r[0] ? r[2] : r[3]));
-	};
-
+	let replaceVarValue = () => {};
 	let replacePinConstant = () => {};
+
+	if (settings.structVarsToBools === true) {
+		replaceVarValue = (sn, n) => {
+			const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(0|1)', 'g');
+			content = content.replace(re, (m, m1, m2) => m1 + (m2 === '0' ? 'false' : 'true'));
+		};
+	} else {
+		replaceVarValue = (sn, n) => {
+			const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(false|true)', 'g');
+			content = content.replace(re, (m, m1, m2) => m1 + (m2 === 'false' ? '0' : '1'));
+		};
+	}
 	if (settings.definesToConstants === true) {
 		replacePinConstant = (n) => {
 			const re = new RegExp('(#define)?\\s*PIN_' + n.toUpperCase() + '\\s*(\\d+)?', 'g');
@@ -341,14 +321,15 @@ const formatter = (t, c, d) => {
 	}
 
 	if (settings.removeComments === true) {
-		for (const c of reCommentsList) {
+		for (const c of reRemoteXYComments) {
 			content = content.replace(c[0], c[1] || '');
 		}
 	}
 
 	//indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
 	content = content.replace(reReindent, indent + '$1$2');
-	content = content.replace(reRebrace, lineEnding + 'void $1()' + (settings.bracesStyle === 0 ? lineEnding : ' ') + '{');
+	content = content.replace(reRebrace, '\n\nvoid $1()' + (settings.bracesStyle === 0 ? '\n' : ' ') + '{');
+	//content = content.replace(reRebrace, 'void $1()' + (settings.bracesStyle === 0 ? lineEnding : ' ') + '{');
 	//content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
 	content = content.replace(reLineEndings, lineEnding);
 	content = content.replace(reEndSpaces, '');

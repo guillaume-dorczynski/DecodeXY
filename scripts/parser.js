@@ -1,5 +1,5 @@
 import { formatter } from './formatter.js';
-import treeify from 'treeify';
+//import treeify from 'treeify';
 
 // Regex to remove comments
 // prettier-ignore
@@ -158,8 +158,6 @@ const parser = (title, content) => {
 	let structs = [];
 
 	c = c.replace(reComment, (m) => ' '.repeat(m.length));
-
-	console.log(c);
 
 	console.log('  Searching structs');
 	for (const m of c.matchAll(reStruct)) {
