@@ -6,7 +6,8 @@ const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
 
 const reEndSpaces = new RegExp('[ \\t]+(?=\\r?\\n)', 'g');
 
-const reSurroundingEmptyLines = new RegExp('^\\s*|(?<=\\r?\\n)\\s*$', 'g');
+//const reSurroundingEmptyLines = new RegExp('^\\s*|(?<=\\r?\\n)\\s*$', 'g');
+const reSurroundingEmptyLines = new RegExp('^\\s*|\\s*$', 'g');
 
 // prettier-ignore
 /*const reCommentsList = [
@@ -23,11 +24,20 @@ const reSurroundingEmptyLines = new RegExp('^\\s*|(?<=\\r?\\n)\\s*$', 'g');
 		')\\s+', 'g'), ''],
 ];*/
 
+//const reBadIndent = new RegExp('^  (.*)$', 'gm');
+const reReindent = new RegExp( '^ {2}(RemoteXY_Init|RemoteXY_Handler|pinMode|digitalWrite|\\/\\/ )\\s*(.*)$', 'gm');
+
+const reRebrace = new RegExp('^\\s*void\\s*(setup|loop)\\s*\\(\\)\\s*{', 'gm');
+
 const reCommentsList = [
 	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
-	[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+\\s*', 'g'), ''],
+	//[new RegExp('\\/+\\s*\\/+\\s*(RemoteXY include library|END RemoteXY include)\\s*\\/+\\s*\\/+\\s*', 'g'), ''],
 	//[new RegExp('^\\s*\\/\\/\\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\\s*$$$$', 'gm'), ''],
-	[/^\s*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\s*$/gm, ''],
+	//[/^\s*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\s*$/gm, ''],
+	[/^[\s/]*(?:(?:END )?RemoteXY (?:include|select|connection|configurate).*|this structure.*interface)[\s/]*$/gm, ' '],
+	//[new RegExp('\\s*\\/\\/ TODO.*(?:code|\\s.*\\s.*delay\\(\\))\\s*\\r?\\n', 'gm')],
+	[new RegExp('\\s* {2}\\/\\/ (TODO.*code|use.*transfer|do.*delay\\(\\))\\s*(?=\\n)', 'gm')],
+	[new RegExp('\\s*(#include <RemoteXY\\.h>)\\s*', 'g'), '\n$1\n'],
 ];
 
 let formatterData = undefined;
@@ -49,6 +59,8 @@ const formatter = (t, c, d) => {
 	let title = formatterData.title;
 	let content = formatterData.content;
 	let parsedData = formatterData.data;
+
+	console.log(content.replace(/^\s*\/\/\s*(?:RemoteXY select connection mode and include library|RemoteXY connection settings|RemoteXY configurate|this structure defines all the variables and events of your control interface)\s*$/gm, ''));
 
 	const settings = getSettings();
 	const indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
@@ -302,11 +314,28 @@ const formatter = (t, c, d) => {
 		const re = new RegExp('(' + sn + '\\s*(?:\\[\\s*.+\\s*\\])?\\s*\\.' + n + '\\s*\\={1,2}\\s*)(' + r[0] + '|' + r[1] + ')', 'g');
 		content = content.replace(re, (m, m1, m2) => m1 + (m2 === r[0] ? r[2] : r[3]));
 	};
+
+	let replacePinConstant = () => {};
+	if (settings.definesToConstants === true) {
+		replacePinConstant = (n) => {
+			const re = new RegExp('(#define)?\\s*PIN_' + n.toUpperCase() + '\\s*(\\d+)?', 'g');
+			const p = 'pin_' + n;
+			content = content.replace(re, (m, m1, m2) => (m1 && m2 ? 'const uint8_t ' + p + ' = ' + m2 + ';' : p));
+		};
+	} else {
+		replacePinConstant = (n) => {
+			const re = new RegExp('(const uint8_t)?\\s*pin_' + n + '\\s*=?\\s*(\\d+)?\\s*;?', 'g');
+			const p = 'PIN_' + n.toUpperCase();
+			content = content.replace(re, (m, m1, m2) => (m1 && m2 ? '#define ' + p + ' ' + m2 : p));
+		};
+	}
 	for (const d of parsedData) {
 		const s = d.struct;
 		const sn = s.objectName;
 		for (const i of [...d.array.elements.inputs.buttons, ...d.array.elements.inputs.switches]) {
-			replaceVarValue(sn, d.array.elements.all[i].structVar.name);
+			const n = d.array.elements.all[i].structVar.name;
+			replaceVarValue(sn, n);
+			replacePinConstant(n);
 		}
 		replaceVarValue(sn, s.variables[s.otherVarsIdx].name);
 	}
@@ -317,10 +346,13 @@ const formatter = (t, c, d) => {
 		}
 	}
 
-	content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
+	//indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
+	content = content.replace(reReindent, indent + '$1$2');
+	content = content.replace(reRebrace, lineEnding + 'void $1()' + (settings.bracesStyle === 0 ? lineEnding : ' ') + '{');
+	//content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
 	content = content.replace(reLineEndings, lineEnding);
 	content = content.replace(reEndSpaces, '');
-	content = (content + lineEnding).replace(reSurroundingEmptyLines, '');
+	content = content.replace(reSurroundingEmptyLines, '') + lineEnding;
 
 	setCode(title, content);
 

@@ -74,12 +74,18 @@ const settings = {
 		options: { 0: 'Detect', 1: 'LF', 2: 'CR+LF' },
 		value: 2,
 	},
-	/*removeComments: {
+	removeComments: {
 		label: 'Delete RemoteXY comments',
 		tooltip: "Enable this option to delete all RemoteXY's default comments.",
 		type: 'checkbox',
 		value: true,
-	},*/
+	},
+	definesToConstants: {
+		label: 'Change #defines to constants',
+		tooltip: 'Enable this option to change <br><code style="color: #ffffff;">#define PIN_XXX</code></color><br>to<br><code style="color: #ffffff;">const uint8_t pin_xxx</code>',
+		type: 'checkbox',
+		value: true,
+	},
 
 	Array: { label: true },
 	commentsPosition: {

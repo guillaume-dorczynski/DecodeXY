@@ -35,14 +35,16 @@ const loadContent = (c, n) => {
 	if (c.kind) {
 		if (c.kind === 'string') {
 			c.getAsString((s) => loadContent(s, n));
-			return;
+			//return;
 		} else if (c.kind === 'file') {
 			loadContent(c.getAsFile());
-			return;
+			//return;
 		}
-	}
-
-	if (typeof c === 'string') {
+	} else if (typeof c === 'string') {
+		if (c.startsWith('<html>') === true) {
+			console.log('lolo');
+			return false;
+		}
 		if (n === 'd') {
 			n = 'Dropped text';
 		} else if (n === 'p') {
@@ -51,6 +53,7 @@ const loadContent = (c, n) => {
 		console.log('Loading "' + n + '"\n\n');
 		//loadedContent = { name: n, content: c };
 		parser(n, c);
+		return true;
 		//parseContent();
 	} else if (c instanceof File) {
 		if (c.size > 100000000) {

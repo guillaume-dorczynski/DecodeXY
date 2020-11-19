@@ -159,6 +159,8 @@ const parser = (title, content) => {
 
 	c = c.replace(reComment, (m) => ' '.repeat(m.length));
 
+	console.log(c);
+
 	console.log('  Searching structs');
 	for (const m of c.matchAll(reStruct)) {
 		const s = {
@@ -356,7 +358,7 @@ const parser = (title, content) => {
 									break;
 								}
 								case inputType.slider: {
-									e.alwaysCenter = (e.flags & 0b00010000) >> 4;
+									e.automaticCenter = (e.flags & 0b00010000) >> 4;
 									e.centerPosition = (e.flags & 0b01100000) >> 5;
 									e.orientation = (e.flags & 0b10000000) >> 7;
 									e.buttonColor = an[++j];
@@ -585,10 +587,17 @@ const parser = (title, content) => {
 														esv.names.push(n + i);
 													}
 												}
-											} else if (e.category === category.input && e.type === inputType.joystick) {
-												esv.names = [];
-												esv.names.push(n + '_x');
-												esv.names.push(n + '_y');
+											} else if (e.category === category.input) {
+												if (e.type === inputType.joystick) {
+													esv.names = [];
+													esv.names.push(n + '_x');
+													esv.names.push(n + '_y');
+												} else if (e.type === inputType.colorPicker) {
+													esv.names = [];
+													esv.names.push(n + '_r');
+													esv.names.push(n + '_g');
+													esv.names.push(n + '_b');
+												}
 											}
 										}
 										++j;

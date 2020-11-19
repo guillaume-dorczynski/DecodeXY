@@ -9,6 +9,7 @@ tippy.setDefaultProps({
 	maxWidth: 200,
 	animation: 'scale',
 	touch: true,
+	allowHTML: true,
 });
 
 const tooltips = [];

@@ -115,8 +115,9 @@ document.body.onpaste = (e) => {
 	if (mouseInside) {
 		if (e.clipboardData.items) {
 			for (const i of e.clipboardData.items) {
-				loadContent(i, 'p');
-				break; // fixme
+				if (loadContent(i, 'p') === true) {
+					break; // fixme
+				}
 			}
 		}
 	}
