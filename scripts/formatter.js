@@ -8,8 +8,7 @@ const reSurroundingEmptyLines = new RegExp('^\\s*|\\s*$', 'g');
 const reReindent = new RegExp('^ {2}(RemoteXY_Init|RemoteXY_Handler|pinMode|digitalWrite|\\/\\/ )\\s*(.*)$', 'gm');
 const reRebrace = new RegExp('\\s*void\\s*(setup|loop)\\s*\\(\\)\\s*{', 'gm');
 const reRemoteXYComments = [
-	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', ''), ''],
-	//[/^[\s/]*(?:(?:END )?RemoteXY (?:include|select|connection|configurate).*|this structure.*interface)[\s/]*$/gm, ' '],
+	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', '')],
 	[new RegExp('^[\\s/]*(?:(?:END )?RemoteXY (?:include|select|connection|configurate).*|this structure.*interface)[\\s/]*$', 'gm'), ' '],
 	[new RegExp('\\s* {2}\\/\\/ (TODO.*code|use.*transfer|do.*delay\\(\\))\\s*(?=\\n)', 'gm')],
 	[new RegExp('\\s*(#include <RemoteXY\\.h>)\\s*', 'g'), '\n$1\n'],
@@ -326,11 +325,8 @@ const formatter = (t, c, d) => {
 		}
 	}
 
-	//indent = (settings.indentationChar === 0 ? '\t' : ' ').repeat(settings.indentationSize);
 	content = content.replace(reReindent, indent + '$1$2');
 	content = content.replace(reRebrace, '\n\nvoid $1()' + (settings.bracesStyle === 0 ? '\n' : ' ') + '{');
-	//content = content.replace(reRebrace, 'void $1()' + (settings.bracesStyle === 0 ? lineEnding : ' ') + '{');
-	//content = content.replace(new RegExp('.*(RemoteXY_)(Init|Handler)\\s*(\\()\\s*(\\))', 'g'), indent + '$1$2$3$4');
 	content = content.replace(reLineEndings, lineEnding);
 	content = content.replace(reEndSpaces, '');
 	content = content.replace(reSurroundingEmptyLines, '') + lineEnding;
