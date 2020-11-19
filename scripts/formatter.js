@@ -5,7 +5,7 @@ import { setCode } from './codebox.js';
 const reLineEndings = new RegExp('\\r\\n|[\\r\\n]', 'g');
 const reEndSpaces = new RegExp('[ \\t]+(?=\\r?\\n)', 'g');
 const reSurroundingEmptyLines = new RegExp('^\\s*|\\s*$', 'g');
-const reReindent = new RegExp('^ {2}(RemoteXY_Init|RemoteXY_Handler|pinMode|digitalWrite|\\/\\/ )\\s*(.*)$', 'gm');
+const reReindent = new RegExp('^ {2}((?:RemoteXY_Init|RemoteXY_Handler|pinMode|digitalWrite)|\\/\\/ (?:TODO.*code|use.*transfer|do.*delay\\(\\)).*) *(.*)$', 'gm');
 const reRebrace = new RegExp('\\s*void\\s*(setup|loop)\\s*\\(\\)\\s*{', 'gm');
 const reRemoteXYComments = [
 	[new RegExp('\\/\\*\\s*-- .* --[^]*?\\*\\/\\s*', '')],
